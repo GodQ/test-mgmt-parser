@@ -1,7 +1,7 @@
 from . import bp
 from flask import jsonify, request
 
-from .es_test_result import search_data
+from .mock_data import search_data
 
 
 @bp.route('/')
