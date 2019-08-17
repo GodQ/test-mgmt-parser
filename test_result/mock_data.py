@@ -1,38 +1,19 @@
-data = [
-    {
-        "testrun_id": 1,
-        "case_id": "1",
-        "case_name": "aaa",
-        "case_result": "success",
-        "comment": "comment1",
-        "index": "godq"
-    },
-    {
-        "testrun_id": 1,
-        "case_id": "2",
-        "case_name": "bbb",
-        "case_result": "failure",
-        "comment": "comment2",
-        "index": "godq"
-    },
-    {
-        "testrun_id": 1,
-        "case_id": "3",
-        "case_name": "ccc",
-        "case_result": "error",
-        "comment": "comment3",
-        "index": "godq"
-    },
-    {
-        "testrun_id": 1,
-        "case_id": "4",
-        "case_name": "ddd",
-        "case_result": "skip",
-        "comment": "comment4",
-        "index": "godq"
-    }
-]
+import json
+import os
+
+data = []
+data_path = os.path.join(os.path.dirname(__file__), "mock_data.json")
+with open(data_path, "r") as fd:
+    data_str = str(fd.read())
+    data = json.loads(data_str)
 
 
 def search_data(params=None):
-    return data * 4
+    return data
+
+def update_data(item):
+    for i,d in enumerate(data):
+        if d.get('case_id') == item.get('case_id') and d.get('testrun_id') == item.get('testrun_id'):
+            data[i].update(item)
+            return 1
+    return 0

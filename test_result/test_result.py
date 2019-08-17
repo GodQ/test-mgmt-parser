@@ -1,7 +1,8 @@
 from . import bp
-from flask import jsonify, request
+from flask import jsonify, request, make_response
+import json
 
-from .mock_data import search_data
+from .mock_data import search_data, update_data
 
 
 @bp.route('/')
@@ -14,7 +15,10 @@ def test_result():
     print(request)
     print(request.args)
     print(request.data)
-    print(request.json)
+    # print(request.json)
+
+    args = request.args
+    body_json = request.json
 
     if request.method == 'GET':
         params = request.args
@@ -24,9 +28,17 @@ def test_result():
         }
         return jsonify(resp), 200
     elif request.method == 'PATCH':
-        params = request.args
-        data = search_data(params)
+        if not body_json:
+            resp = {
+                "error": "no json body or header"
+            }
+            return jsonify(resp), 400
+        updated = update_data(body_json)
         resp = {
-            "data": data
+            "updated": updated
         }
-        return jsonify(resp), 200
+        if updated == 0:
+            status = 404
+        else:
+            status = 201
+        return jsonify(resp), status
