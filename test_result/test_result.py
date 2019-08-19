@@ -2,12 +2,32 @@ from . import bp
 from flask import jsonify, request, make_response
 import json
 
-from .mock_data import search_data, update_data
-
+# from .mock_data import get_testrun_list, search_data, update_data
+from .es_test_result import get_testrun_list, get_test_index_list, search_data, update_data
 
 @bp.route('/')
 def index():
     return 'Hello!'
+
+
+@bp.route('/test_index_list', methods=['GET'])
+def test_index_list():
+    args = request.args
+    testruns = get_test_index_list(args)
+    resp = {
+        "data": testruns
+    }
+    return jsonify(resp), 200
+
+
+@bp.route('/testrun_list', methods=['GET'])
+def testrun_list():
+    args = request.args
+    testruns = get_testrun_list(args)
+    resp = {
+        "data": testruns
+    }
+    return jsonify(resp), 200
 
 
 @bp.route('/test_result', methods=['GET', 'PATCH'])
@@ -21,7 +41,9 @@ def test_result():
     body_json = request.json
 
     if request.method == 'GET':
-        params = request.args
+        params = request.args.to_dict()
+        if 'limit' not in params:
+            params['limit'] = 10
         data = search_data(params)
         resp = {
             "data": data
