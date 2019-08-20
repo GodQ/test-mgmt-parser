@@ -48,7 +48,6 @@ def common_search(index, query_body, attach_id=False, **kwargs):
     return data
 
 
-
 def get_testrun_list(params=None):
     if params is None:
         params = {}
@@ -92,9 +91,18 @@ def search_data(params=None):
     limit = params.get("limit", 100)
     if not isinstance(limit, int):
         limit = int(limit)
-    query_body = {"query": {"match_all": {}}}
+    del params['limit']
+    if "index" in params:
+        index = params["index"]
+        del params["index"]
+    else:
+        index = "test-result-vose"
+    query_must = list()
+    for k, v in params.items():
+        query_must.append({ "match_phrase": { k: v } })
+    query_body = {"query": { "bool": { "must": query_must}}}
     data = common_search(
-        index=test_result_index, 
+        index=index, 
         query_body=query_body,
         limit=limit, 
         attach_id=True,
@@ -102,12 +110,41 @@ def search_data(params=None):
     return data
 
 
-def update_data(item):
+def _update_es_by_query(index, queries, updates):
+    query_must = list()
+    for k, v in queries.items():
+        query_must.append({ "match_phrase": { k: v } })
+
+    script_source = list()
+    for k, v in updates.items():
+        script_source.append("ctx._source['{}']='{}'".format(k, v))
+    script_source = ";".join(script_source)
+    body = {
+        "script": { "source": script_source },
+        "query": { "bool": { "must": query_must}}
+    }
+    ret = es.update_by_query(index, body)
+    print(ret)
+
+
+def update_data(items):
+    updated = 0
+    if isinstance(items, list):
+        data = items
+    else:
+        data = [items]
     for i,d in enumerate(data):
-        if d.get('case_id') == item.get('case_id') and d.get('testrun_id') == item.get('testrun_id'):
-            data[i].update(item)
-            return 1
-    return 0
+        if d.get('case_id') and d.get('testrun_id') and d.get("index"):
+            query = {
+                'testrun_id': d.get('testrun_id'),
+                "case_id": d.get('case_id')
+            }
+            update = {
+                "comment": d.get('comment')
+            }
+            _update_es_by_query(d.get("index"), query, update)
+            updated += 1
+    return updated
 
 
 if __name__ == '__main__':

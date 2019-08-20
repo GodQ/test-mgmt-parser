@@ -2,7 +2,7 @@ from . import bp
 from flask import jsonify, request, make_response
 import json
 
-# from .mock_data import get_testrun_list, search_data, update_data
+# from .mock_data import get_testrun_list, get_test_index_list, search_data, update_data
 from .es_test_result import get_testrun_list, get_test_index_list, search_data, update_data
 
 @bp.route('/')
