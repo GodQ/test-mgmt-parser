@@ -97,10 +97,25 @@ def search_data(params=None):
         del params["index"]
     else:
         index = "test-result-vose"
+
+    multi_match = None
+    if "keyword" in params:
+        keyword = params['keyword']
+        del params["keyword"]
+        multi_match =  {
+            "query": keyword,
+            "type": "phrase_prefix",
+            "fields": [ "*" ] 
+        }
+    
     query_must = list()
     for k, v in params.items():
         query_must.append({ "match_phrase": { k: v } })
+    
     query_body = {"query": { "bool": { "must": query_must}}}
+    if multi_match:
+        query_body["query"]["bool"]["must"].append({"multi_match": multi_match})
+    print(query_body)
     data = common_search(
         index=index, 
         query_body=query_body,

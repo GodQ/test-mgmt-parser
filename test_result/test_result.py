@@ -43,7 +43,7 @@ def test_result():
     if request.method == 'GET':
         params = request.args.to_dict()
         if 'limit' not in params:
-            params['limit'] = 10
+            params['limit'] = 500
         data = search_data(params)
         resp = {
             "data": data
