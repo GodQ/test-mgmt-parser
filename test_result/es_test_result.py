@@ -27,11 +27,14 @@ def common_search(index, query_body, attach_id=False, **kwargs):
         "body": query_body,
     })
     while not total or count < total:
+        # print(total, count)
         query_body.update({"from": from_id, 'size': 100})
         kwargs['body'] = query_body
         res = es.search(**kwargs)
         if not total:
             total = res['hits']['total']['value']
+            if not total:
+                break
         for hit in res['hits']['hits']:
             d = hit["_source"]
             if attach_id:
@@ -56,15 +59,16 @@ def get_testrun_list(params=None):
         limit = int(limit)
     query_body = {"query": {"match_all": {}}}
     data = common_search(
-        index=test_result_index, 
+        index=test_result_index,
         query_body=query_body,
-        limit=limit, 
+        limit=limit,
         _source=['testrun_id'])
     testrun_set = set()
     for d in data:
         testrun_set.add(d['testrun_id'])
     data = [d for d in testrun_set]
     return data
+
 
 def get_test_index_list(params=None):
     if params is None:
@@ -74,9 +78,9 @@ def get_test_index_list(params=None):
         limit = int(limit)
     query_body = {"query": {"match_all": {}}}
     data = common_search(
-        index=test_result_index, 
+        index=test_result_index,
         query_body=query_body,
-        limit=limit, 
+        limit=limit,
         attach_id=True,
         _source=['testrun_id'])
     index_set = set()
@@ -84,6 +88,7 @@ def get_test_index_list(params=None):
         index_set.add(d['index'])
     data = [d for d in index_set]
     return data
+
 
 def search_data(params=None):
     if params is None:
@@ -98,28 +103,48 @@ def search_data(params=None):
     else:
         index = "test-result-vose"
 
-    multi_match = None
+    multi_matches = list()
     if "keyword" in params:
         keyword = params['keyword']
+        keyword = keyword.replace(" ", "")
         del params["keyword"]
-        multi_match =  {
-            "query": keyword,
-            "type": "phrase_prefix",
-            "fields": [ "*" ] 
-        }
-    
+
+        key_splits = keyword.split("&")
+        for key_split in key_splits:
+            key_split = key_split
+            kv = key_split.split(":")
+            if len(kv) == 2:
+                multi_matches.append({
+                    "query": kv[1],
+                    "type": "phrase_prefix",
+                    "fields": [kv[0]]
+                })
+            else:
+                multi_matches.append({
+                    "query": key_split,
+                    "type": "phrase_prefix",
+                    "fields": ["*"]
+                })
+        if len(multi_matches) == 0:
+            multi_matches.append({
+                "query": keyword,
+                "type": "phrase_prefix",
+                "fields": ["*"]
+            })
+
     query_must = list()
     for k, v in params.items():
-        query_must.append({ "match_phrase": { k: v } })
-    
-    query_body = {"query": { "bool": { "must": query_must}}}
-    if multi_match:
-        query_body["query"]["bool"]["must"].append({"multi_match": multi_match})
+        query_must.append({"match_phrase": {k: v}})
+
+    query_body = {"query": {"bool": {"must": query_must}}}
+    if multi_matches:
+        for multi_match in multi_matches:
+            query_body["query"]["bool"]["must"].append({"multi_match": multi_match})
     print(query_body)
     data = common_search(
-        index=index, 
+        index=index,
         query_body=query_body,
-        limit=limit, 
+        limit=limit,
         attach_id=True,
         _source=search_source)
     return data
@@ -128,15 +153,15 @@ def search_data(params=None):
 def _update_es_by_query(index, queries, updates):
     query_must = list()
     for k, v in queries.items():
-        query_must.append({ "match_phrase": { k: v } })
+        query_must.append({"match_phrase": {k: v}})
 
     script_source = list()
     for k, v in updates.items():
         script_source.append("ctx._source['{}']='{}'".format(k, v))
     script_source = ";".join(script_source)
     body = {
-        "script": { "source": script_source },
-        "query": { "bool": { "must": query_must}}
+        "script": {"source": script_source},
+        "query": {"bool": {"must": query_must}}
     }
     ret = es.update_by_query(index, body)
     print(ret)
@@ -148,7 +173,7 @@ def update_data(items):
         data = items
     else:
         data = [items]
-    for i,d in enumerate(data):
+    for i, d in enumerate(data):
         if d.get('case_id') and d.get('testrun_id') and d.get("index"):
             query = {
                 'testrun_id': d.get('testrun_id'),
@@ -164,5 +189,5 @@ def update_data(items):
 
 if __name__ == '__main__':
     print(get_test_index_list())
-    # print(get_testrun_list())
-    # print(search_data({'limit':10})[0])
+    print(get_testrun_list())
+    print(search_data({'limit': 10})[0])

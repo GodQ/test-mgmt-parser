@@ -5,12 +5,13 @@ import json
 # from .mock_data import get_testrun_list, get_test_index_list, search_data, update_data
 from .es_test_result import get_testrun_list, get_test_index_list, search_data, update_data
 
+
 @bp.route('/')
 def index():
     return 'Hello!'
 
 
-@bp.route('/test_index_list', methods=['GET'])
+@bp.route('/test_index', methods=['GET'])
 def test_index_list():
     args = request.args
     testruns = get_test_index_list(args)
@@ -20,7 +21,7 @@ def test_index_list():
     return jsonify(resp), 200
 
 
-@bp.route('/testrun_list', methods=['GET'])
+@bp.route('/testrun', methods=['GET'])
 def testrun_list():
     args = request.args
     testruns = get_testrun_list(args)
