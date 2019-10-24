@@ -3,12 +3,19 @@ from flask import jsonify, request, make_response
 import json
 
 # from .mock_data import get_testrun_list, get_test_index_list, search_data, update_data
-from .es_test_result import get_testrun_list, get_test_index_list, search_data, update_data
+from .es_test_result import get_testrun_list, get_test_index_list, search_data, update_data, get_summary
 
 
 @bp.route('/')
 def index():
     return 'Hello!'
+
+
+@bp.route('/summary', methods=['GET'])
+def summary():
+    summary = get_summary()
+    print(summary)
+    return summary, 200
 
 
 @bp.route('/test_index', methods=['GET'])
@@ -21,7 +28,7 @@ def test_index_list():
     return jsonify(resp), 200
 
 
-@bp.route('/testrun', methods=['GET'])
+@bp.route('/testruns', methods=['GET'])
 def testrun_list():
     args = request.args
     testruns = get_testrun_list(args)

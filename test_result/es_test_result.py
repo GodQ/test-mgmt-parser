@@ -1,5 +1,6 @@
 from elasticsearch import Elasticsearch
 import copy
+from pprint import pprint
 
 hosts = ["10.110.124.130:9200"]
 test_result_index = "test-result-*"
@@ -30,6 +31,8 @@ def common_search(index, query_body, attach_id=False, **kwargs):
         # print(total, count)
         query_body.update({"from": from_id, 'size': 100})
         kwargs['body'] = query_body
+        print("\nES query:")
+        pprint(kwargs)
         res = es.search(**kwargs)
         if not total:
             total = res['hits']['total']['value']
@@ -51,15 +54,47 @@ def common_search(index, query_body, attach_id=False, **kwargs):
     return data
 
 
+def get_summary():
+    data = dict()
+
+    query_body = {
+        "size": 0,
+        "aggs": {
+            "index_count": {
+                "cardinality": {
+                    "field": "_index"
+                }
+            },
+            "testrun_count": {
+                "cardinality": {
+                    "field": "testrun_id.keyword"
+                }
+            },
+        }
+    }
+    es_data = es.search(index=test_result_index, body=query_body)
+
+    data["total"] = es_data['hits']['total']['value']
+    data['index_count'] = es_data['aggregations']['index_count']['value']
+    data['testrun_count'] = es_data['aggregations']['testrun_count']['value']
+
+    return data
+
+
 def get_testrun_list(params=None):
     if params is None:
         params = {}
     limit = params.get("limit", 10000)
+    index = params.get("index", test_result_index)
+    id_only = params.get("id_only", "true")
+    if id_only != "true":
+        return get_testrun_list_details(params)
+
     if not isinstance(limit, int):
         limit = int(limit)
     query_body = {"query": {"match_all": {}}}
     data = common_search(
-        index=test_result_index,
+        index=index,
         query_body=query_body,
         limit=limit,
         _source=['testrun_id'])
@@ -67,6 +102,50 @@ def get_testrun_list(params=None):
     for d in data:
         testrun_set.add(d['testrun_id'])
     data = [d for d in testrun_set]
+    return data
+
+
+def get_testrun_list_details(params=None):
+    if params is None:
+        params = {}
+    index = params.get("index", test_result_index)
+    limit = params.get("limit", 10)
+    if not isinstance(limit, int):
+        limit = int(limit)
+
+    query_body = {
+        "query": {"match_all": {}},
+        "size": 0,
+        "aggs": {
+            "testruns": {
+                "terms": {
+                    "field": "testrun_id.keyword"
+                },
+                "aggs": {
+                    "case_results": {
+                        "terms": {
+                            "field": "case_result.keyword"
+                        }
+                    }
+                }
+            },
+        }
+    }
+
+    es_data = es.search(index=index, body=query_body)
+    # pprint(es_data)
+    if not es_data:
+        return {}
+    data = list()
+    for testrun in es_data['aggregations']['testruns']['buckets']:
+        item = dict()
+        item['testrun_id'] = testrun['key']
+        item['case_count'] = testrun['doc_count']
+        for status in testrun['case_results']['buckets']:
+            item[status['key']] = status['doc_count']
+        if item['success'] and item['case_count']:
+            item['success_rate'] = float(item['success']) / item['case_count'] * 100
+        data.append(item)
     return data
 
 
@@ -188,6 +267,8 @@ def update_data(items):
 
 
 if __name__ == '__main__':
-    print(get_test_index_list())
-    print(get_testrun_list())
-    print(search_data({'limit': 10})[0])
+    # print(get_test_index_list())
+    # print(get_testrun_list())
+    # print(search_data({'limit': 10})[0])
+    # print(get_summary())
+    print(get_testrun_details())
