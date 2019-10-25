@@ -100,7 +100,8 @@ def get_testrun_list(params=None):
         _source=['testrun_id'])
     testrun_set = set()
     for d in data:
-        testrun_set.add(d['testrun_id'])
+        if "testrun_id" in d:
+            testrun_set.add(d['testrun_id'])
     data = [d for d in testrun_set]
     return data
 
