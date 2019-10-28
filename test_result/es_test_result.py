@@ -197,7 +197,7 @@ def search_results(params=None):
         key_splits = keyword.split("&")
         for key_split in key_splits:
             key_split = key_split
-            kv = key_split.split(":")
+            kv = key_split.split(":", 1)
             if len(kv) == 2:
                 multi_matches.append({
                     "query": kv[1],
