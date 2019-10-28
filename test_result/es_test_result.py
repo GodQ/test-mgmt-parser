@@ -152,7 +152,8 @@ def get_testrun_list_details(params=None):
             item['success_rate'] = float(item['success']) / item['case_count'] * 100
         data.append(item)
     # data.sort(key=lambda i: i['testrun_id'])
-    return data[0:limit]
+    data.reverse()
+    return data
 
 
 def get_test_index_list(params=None):
