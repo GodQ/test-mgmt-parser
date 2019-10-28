@@ -3,7 +3,7 @@ from flask import jsonify, request, make_response
 import json
 
 # from .mock_data import get_testrun_list, get_test_index_list, search_data, update_data
-from .es_test_result import get_testrun_list, get_test_index_list, search_data, update_data, get_summary
+from .es_test_result import get_testrun_list, get_test_index_list, search_results, update_results, get_summary
 
 
 @bp.route('/')
@@ -52,7 +52,7 @@ def test_result():
         params = request.args.to_dict()
         if 'limit' not in params:
             params['limit'] = 500
-        data = search_data(params)
+        data = search_results(params)
         resp = {
             "data": data
         }
@@ -63,7 +63,7 @@ def test_result():
                 "error": "no json body or header"
             }
             return jsonify(resp), 400
-        updated = update_data(body_json)
+        updated = update_results(body_json)
         resp = {
             "updated": updated
         }

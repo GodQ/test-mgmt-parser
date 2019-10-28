@@ -120,7 +120,11 @@ def get_testrun_list_details(params=None):
         "aggs": {
             "testruns": {
                 "terms": {
-                    "field": "testrun_id.keyword"
+                    "field": "testrun_id.keyword",
+                    "size": limit,
+                    "order": {
+                        "_term": "desc"
+                    }
                 },
                 "aggs": {
                     "case_results": {
@@ -147,7 +151,8 @@ def get_testrun_list_details(params=None):
         if item['success'] and item['case_count']:
             item['success_rate'] = float(item['success']) / item['case_count'] * 100
         data.append(item)
-    return data
+    # data.sort(key=lambda i: i['testrun_id'])
+    return data[0:limit]
 
 
 def get_test_index_list(params=None):
@@ -170,7 +175,7 @@ def get_test_index_list(params=None):
     return data
 
 
-def search_data(params=None):
+def search_results(params=None):
     if params is None:
         params = {}
     limit = params.get("limit", 100)
@@ -220,7 +225,8 @@ def search_data(params=None):
     if multi_matches:
         for multi_match in multi_matches:
             query_body["query"]["bool"]["must"].append({"multi_match": multi_match})
-    print(query_body)
+    query_body['sort'] = {"testrun_id.keyword": {"order": "desc"}}
+    pprint(query_body)
     data = common_search(
         index=index,
         query_body=query_body,
@@ -247,7 +253,7 @@ def _update_es_by_query(index, queries, updates):
     print(ret)
 
 
-def update_data(items):
+def update_results(items):
     updated = 0
     if isinstance(items, list):
         data = items
@@ -268,8 +274,8 @@ def update_data(items):
 
 
 if __name__ == '__main__':
-    # print(get_test_index_list())
-    # print(get_testrun_list())
-    # print(search_data({'limit': 10})[0])
-    # print(get_summary())
-    print(get_testrun_details())
+    # pprint(get_test_index_list())
+    # pprint(get_testrun_list())
+    # pprint(search_results({'limit': 100}))
+    # pprint(get_summary())
+    pprint(get_testrun_list_details({"limit":3}))
