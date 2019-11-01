@@ -149,7 +149,7 @@ def get_testrun_list_details(params=None):
         for status in testrun['case_results']['buckets']:
             item[status['key']] = status['doc_count']
         if item['success'] and item['case_count']:
-            item['success_rate'] = float(item['success']) / item['case_count'] * 100
+            item['success_rate'] = int(float(item['success']) / item['case_count'] * 1000)/10
         data.append(item)
     # data.sort(key=lambda i: i['testrun_id'])
     data.reverse()
