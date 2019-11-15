@@ -216,7 +216,6 @@ def get_test_index_list(params=None):
         limit=limit,
         attach_id=True,
         _source=['testrun_id'])
-    pprint(data)
     index_set = set()
     for d in data:
         index_set.add(d['index'])
