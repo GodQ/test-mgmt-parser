@@ -8,6 +8,7 @@ search_source = ['case_id', 'case_name', 'case_result', 'testrun_id', 'comment']
 es = Elasticsearch(hosts=hosts)
 
 
+'''
 def common_search(index, query_body, attach_id=False, **kwargs):
     query_body = copy.deepcopy(query_body)
     from_id = query_body.get('from', 0)
@@ -52,6 +53,37 @@ def common_search(index, query_body, attach_id=False, **kwargs):
             break
         from_id = count
     return data
+'''
+
+
+def common_search(index, query_body, attach_id=False, **kwargs):
+    query_body = copy.deepcopy(query_body)
+    b_size = query_body.get('size', None)
+    limit = 100
+    if b_size is not None:
+        limit = b_size
+    k_limit = kwargs.get('limit', None)
+    if k_limit is not None:
+        limit = k_limit
+        del kwargs['limit']
+
+    data = list()
+    kwargs.update({
+        'index': index,
+        "body": query_body,
+    })
+    query_body.update({'size': limit})
+    kwargs['body'] = query_body
+    print("\nES query:")
+    pprint(kwargs)
+    res = es.search(**kwargs)
+    for hit in res['hits']['hits']:
+        d = hit["_source"]
+        if attach_id:
+            d['index'] = hit['_index']
+            d['doc_id'] = hit['_id']
+        data.append(d)
+    return data
 
 
 def get_summary():
@@ -84,26 +116,36 @@ def get_summary():
 def get_testrun_list(params=None):
     if params is None:
         params = {}
-    limit = params.get("limit", 10000)
-    index = params.get("index", test_result_index)
     id_only = params.get("id_only", "true")
     if id_only != "true":
         return get_testrun_list_details(params)
+    else:
+        return get_testrun_list_id_only(params)
 
+
+def get_testrun_list_id_only(params=None):
+    if params is None:
+        params = {}
+    index = params.get("index", test_result_index)
+    limit = params.get("limit", 1000)
     if not isinstance(limit, int):
         limit = int(limit)
-    query_body = {"query": {"match_all": {}}}
+    query_body = {
+        "query": {"match_all": {}},
+        "collapse": {"field": "testrun_id.keyword"},
+        "sort": {"testrun_id.keyword": {"order": "desc"}}
+    }
     data = common_search(
         index=index,
         query_body=query_body,
         limit=limit,
         _source=['testrun_id'])
-    testrun_set = set()
-    for d in data:
-        if "testrun_id" in d:
-            testrun_set.add(d['testrun_id'])
-    data = [d for d in testrun_set]
-    return data
+    d = list()
+    for t in data:
+        i = t.get('testrun_id')
+        if i:
+            d.append(i)
+    return d
 
 
 def get_testrun_list_details(params=None):
@@ -164,13 +206,17 @@ def get_test_index_list(params=None):
     limit = params.get("limit", 10000)
     if not isinstance(limit, int):
         limit = int(limit)
-    query_body = {"query": {"match_all": {}}}
+    query_body = {
+        "query": {"match_all": {}},
+        "sort": {"_index": {"order": "desc"}}
+    }
     data = common_search(
         index=test_result_index,
         query_body=query_body,
         limit=limit,
         attach_id=True,
         _source=['testrun_id'])
+    pprint(data)
     index_set = set()
     for d in data:
         index_set.add(d['index'])
@@ -277,8 +323,8 @@ def update_results(items):
 
 
 if __name__ == '__main__':
-    # pprint(get_test_index_list())
-    # pprint(get_testrun_list())
+    pprint(get_test_index_list())
+    # pprint(get_testrun_list({"id_only": "true"}))
     # pprint(search_results({'limit': 100}))
     # pprint(get_summary())
-    pprint(get_testrun_list_details({"limit":3}))
+    # pprint(get_testrun_list_details({"limit":3}))
