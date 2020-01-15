@@ -3,7 +3,7 @@ from flask import jsonify, request, make_response
 import json
 
 # from .mock_data import get_testrun_list, get_test_index_list, search_data, update_data
-from .es_test_result import get_testrun_list, get_test_index_list, search_results, update_results, get_summary
+from .sql_test_result import get_testrun_list, get_test_index_list, search_results, update_results, get_summary, insert_results
 
 
 @bp.route('/')
@@ -38,7 +38,7 @@ def testrun_list():
     return jsonify(resp), 200
 
 
-@bp.route('/test_result', methods=['GET', 'PATCH'])
+@bp.route('/test_result', methods=['GET', 'PATCH', 'POST'])
 def test_result():
     print(request)
     print(request.args)
@@ -64,6 +64,21 @@ def test_result():
             }
             return jsonify(resp), 400
         updated = update_results(body_json)
+        resp = {
+            "updated": updated
+        }
+        if updated == 0:
+            status = 404
+        else:
+            status = 201
+        return jsonify(resp), status
+    elif request.method == 'POST':
+        if not body_json:
+            resp = {
+                "error": "no json body or header"
+            }
+            return jsonify(resp), 400
+        updated = insert_results(body_json)
         resp = {
             "updated": updated
         }
