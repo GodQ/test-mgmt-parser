@@ -4,7 +4,7 @@ from pprint import pprint
 
 hosts = ["10.110.124.130:9200"]
 test_result_index = "test-result-*"
-search_source = ['case_id', 'case_name', 'case_result', 'testrun_id', 'comment']
+search_source = ['case_id', 'case_result', 'testrun_id', 'comment', 'bugs']
 es = Elasticsearch(hosts=hosts)
 
 
@@ -54,6 +54,10 @@ def common_search(index, query_body, attach_id=False, **kwargs):
         from_id = count
     return data
 '''
+
+
+def insert_results(results):
+    return
 
 
 def common_search(index, query_body, attach_id=False, **kwargs):
@@ -314,7 +318,8 @@ def update_results(items):
                 "case_id": d.get('case_id')
             }
             update = {
-                "comment": d.get('comment')
+                "comment": d.get('comment'),
+                "bugs": d.get('bugs')
             }
             _update_es_by_query(d.get("index"), query, update)
             updated += 1

@@ -3,7 +3,7 @@ from flask import jsonify, request, make_response
 import json
 
 # from .mock_data import get_testrun_list, get_test_index_list, search_data, update_data
-from .sql_test_result import get_testrun_list, get_test_index_list, search_results, update_results, get_summary, insert_results
+from .es_test_result import get_testrun_list, get_test_index_list, search_results, update_results, get_summary, insert_results
 
 
 @bp.route('/')
