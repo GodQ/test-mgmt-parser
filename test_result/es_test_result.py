@@ -1,12 +1,19 @@
 from elasticsearch import Elasticsearch
+import elasticsearch
 import copy
 from pprint import pprint
 
 hosts = ["10.110.124.130:9200"]
-test_result_index = "test-result-*"
+test_result_prefix = "test-result-"
+test_result_index = "{}*".format(test_result_prefix)
 search_source = ['case_id', 'case_result', 'testrun_id', 'comment', 'bugs']
 es = Elasticsearch(hosts=hosts)
 
+
+def get_case_bugs_mapping_index(index):
+    project = index.replace(test_result_prefix, "", 1)
+    mapping_index = project.strip() + "_case_bugs"
+    return mapping_index
 
 '''
 def common_search(index, query_body, attach_id=False, **kwargs):
@@ -285,6 +292,13 @@ def search_results(params=None):
         limit=limit,
         attach_id=True,
         _source=search_source)
+    if data:
+        case_bugs_mapping = get_case_bugs_mapping(index)
+        if case_bugs_mapping:
+            for item in data:
+                case_id = item['case_id']
+                if case_id in case_bugs_mapping:
+                    item['bugs'] = case_bugs_mapping[case_id]
     return data
 
 
@@ -313,6 +327,7 @@ def update_results(items):
         data = [items]
     for i, d in enumerate(data):
         if d.get('case_id') and d.get('testrun_id') and d.get("index"):
+            # update comment in test-results index
             query = {
                 'testrun_id': d.get('testrun_id'),
                 "case_id": d.get('case_id')
@@ -322,12 +337,49 @@ def update_results(items):
                 "bugs": d.get('bugs')
             }
             _update_es_by_query(d.get("index"), query, update)
+
+            # update bugs in case bugs mapping index
+            query = {
+                "case_id": d.get('case_id')
+            }
+            update = {
+                "bugs": d.get('bugs')
+            }
+            mapping_index = get_case_bugs_mapping_index(d.get("index"))
+            try:
+                _update_es_by_query(mapping_index, query, update)
+            except elasticsearch.exceptions.NotFoundError as e:
+                data = {
+                    "case_id": d.get('case_id'),
+                    "bugs": d.get('bugs')
+                }
+                es.index(mapping_index, data)
+
             updated += 1
     return updated
 
 
+def get_case_bugs_mapping(index):
+    mapping_index = get_case_bugs_mapping_index(index)
+    try:
+        mapping = common_search(mapping_index, query_body={})
+        print('aaaa', mapping)
+        if not mapping:
+            mapping = {}
+        t = dict()
+        for m in mapping:
+            if 'case_id' in m and 'bugs' in m:
+                t[m['case_id']] = m['bugs']
+    except elasticsearch.exceptions.NotFoundError as e:
+        mapping = {}
+    print(mapping)
+    return mapping
+
+
 if __name__ == '__main__':
-    pprint(get_test_index_list())
+    indexes = get_test_index_list()
+    pprint(indexes)
+    pprint(get_case_bugs_mapping(indexes[0]))
     # pprint(get_testrun_list({"id_only": "true"}))
     # pprint(search_results({'limit': 100}))
     # pprint(get_summary())
