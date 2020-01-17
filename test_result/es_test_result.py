@@ -245,7 +245,7 @@ def search_results(params=None):
         index = params["index"]
         del params["index"]
     else:
-        index = "test-result-vose"
+        index = "test-result-*"
 
     multi_matches = list()
     if "keyword" in params:
