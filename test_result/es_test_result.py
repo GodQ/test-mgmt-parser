@@ -363,16 +363,15 @@ def get_case_bugs_mapping(index):
     mapping_index = get_case_bugs_mapping_index(index)
     try:
         mapping = common_search(mapping_index, query_body={})
-        print('aaaa', mapping)
         if not mapping:
             mapping = {}
         t = dict()
         for m in mapping:
             if 'case_id' in m and 'bugs' in m:
                 t[m['case_id']] = m['bugs']
+        mapping = t
     except elasticsearch.exceptions.NotFoundError as e:
         mapping = {}
-    print(mapping)
     return mapping
 
 
