@@ -17,7 +17,7 @@ def index():
 def summary():
     summary = ds.get_summary()
     print(summary)
-    return summary, 200
+    return jsonify(summary), 200
 
 
 @bp.route('/test_index', methods=['GET'])

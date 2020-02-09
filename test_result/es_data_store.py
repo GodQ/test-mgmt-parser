@@ -221,6 +221,12 @@ class ElasticSearchDataStore(DataStoreBase):
             del params["index"]
         else:
             index = "test-result-*"
+        details_flag = params.get('details')
+        if details_flag == True or isinstance(details_flag, str) and details_flag.lower()=='true':
+            del params['details']
+            search_source = ""
+        else:
+            search_source = self.search_source
 
         multi_matches = list()
         if "keyword" in params:
@@ -261,12 +267,13 @@ class ElasticSearchDataStore(DataStoreBase):
                 query_body["query"]["bool"]["must"].append({"multi_match": multi_match})
         query_body['sort'] = {"testrun_id.keyword": {"order": "desc"}}
         pprint(query_body)
+        
         data = self.es.common_search(
             index=index,
             query_body=query_body,
             limit=limit,
             attach_id=True,
-            _source=self.search_source)
+            _source=search_source)
         if data:
             case_bugs_mapping = self.get_case_bugs_mapping(index)
             if case_bugs_mapping:
@@ -275,6 +282,7 @@ class ElasticSearchDataStore(DataStoreBase):
                     if case_id in case_bugs_mapping:
                         item['bugs'] = case_bugs_mapping[case_id]
         return data
+
 
     def update_results(self, items):
         updated = 0
