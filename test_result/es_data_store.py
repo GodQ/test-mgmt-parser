@@ -231,7 +231,8 @@ class ElasticSearchDataStore(DataStoreBase):
         multi_matches = list()
         if "keyword" in params:
             keyword = params['keyword']
-            keyword = keyword.replace(" ", "")
+            # keyword = keyword.replace(" ", "")
+            # keyword = keyword.replace(".", " ")
             del params["keyword"]
 
             key_splits = keyword.split("&")
@@ -240,21 +241,24 @@ class ElasticSearchDataStore(DataStoreBase):
                 kv = key_split.split(":", 1)
                 if len(kv) == 2:
                     multi_matches.append({
-                        "query": kv[1],
-                        "type": "phrase_prefix",
-                        "fields": [kv[0]]
+                        "query": kv[1].strip(),
+                        "type": "best_fields",
+                        "fields": [kv[0], kv[0]+".keyword"],
+                        # "operator": "or"
                     })
                 else:
                     multi_matches.append({
-                        "query": key_split,
-                        "type": "phrase_prefix",
-                        "fields": ["*"]
+                        "query": key_split.strip(),
+                        "type": "best_fields",
+                        "fields": ["*"],
+                        # "operator": "or"
                     })
             if len(multi_matches) == 0:
                 multi_matches.append({
-                    "query": keyword,
-                    "type": "phrase_prefix",
-                    "fields": ["*"]
+                    "query": keyword.strip(),
+                    "type": "best_fields",
+                    "fields": ["*"],
+                    # "operator": "or"
                 })
 
         query_must = list()
@@ -283,7 +287,6 @@ class ElasticSearchDataStore(DataStoreBase):
                         item['bugs'] = case_bugs_mapping[case_id]
         return data
 
-
     def update_results(self, items):
         updated = 0
         if isinstance(items, list):
@@ -304,21 +307,14 @@ class ElasticSearchDataStore(DataStoreBase):
                 self.es.update_es_by_query(d.get("index"), query, update)
 
                 # update bugs in case bugs mapping index
-                query = {
-                    "case_id": d.get('case_id')
-                }
-                update = {
-                    "bugs": d.get('bugs')
-                }
+                
                 mapping_index = self.get_case_bugs_mapping_index(d.get("index"))
-                try:
-                    self.es.update_es_by_query(mapping_index, query, update)
-                except elasticsearch.exceptions.NotFoundError as e:
-                    data = {
+                data = {
                         "case_id": d.get('case_id'),
                         "bugs": d.get('bugs')
-                    }
-                    self.es.index(index=mapping_index, body=data)
+                }
+                ret = self.es.index(index=mapping_index, body=data, id=d.get('case_id'))
+                print(ret)
 
                 updated += 1
         return updated
