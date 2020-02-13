@@ -228,7 +228,9 @@ class ElasticSearchDataStore(DataStoreBase):
         else:
             search_source = self.search_source
 
+        regexp_queries = list()
         multi_matches = list()
+
         if "keyword" in params:
             keyword = params['keyword']
             # keyword = keyword.replace(" ", "")
@@ -237,14 +239,14 @@ class ElasticSearchDataStore(DataStoreBase):
 
             key_splits = keyword.split("&")
             for key_split in key_splits:
-                key_split = key_split
+                # key_split = key_split
                 kv = key_split.split(":", 1)
                 if len(kv) == 2:
-                    multi_matches.append({
-                        "query": kv[1].strip(),
-                        "type": "best_fields",
-                        "fields": [kv[0], kv[0]+".keyword"],
-                        # "operator": "or"
+                    field = kv[0].strip()
+                    value = ".*{}.*".format(kv[1].strip())
+
+                    regexp_queries.append({
+                        field: value
                     })
                 else:
                     multi_matches.append({
@@ -253,23 +255,30 @@ class ElasticSearchDataStore(DataStoreBase):
                         "fields": ["*"],
                         # "operator": "or"
                     })
-            if len(multi_matches) == 0:
+            if len(regexp_queries) == 0 and len(multi_matches) == 0:
                 multi_matches.append({
                     "query": keyword.strip(),
                     "type": "best_fields",
                     "fields": ["*"],
                     # "operator": "or"
                 })
+                print('**************')
 
         query_must = list()
         for k, v in params.items():
             query_must.append({"match_phrase": {k: v}})
 
         query_body = {"query": {"bool": {"must": query_must}}}
+        if regexp_queries:
+            for regexp_q in regexp_queries:
+                query_body["query"]["bool"]["must"].append({"regexp": regexp_q})
         if multi_matches:
             for multi_match in multi_matches:
                 query_body["query"]["bool"]["must"].append({"multi_match": multi_match})
-        query_body['sort'] = {"testrun_id.keyword": {"order": "desc"}}
+        query_body['sort'] = [
+            {"testrun_id.keyword": {"order": "desc"}},
+            {"case_id.keyword": {"order": "asc"}},
+        ]
         pprint(query_body)
         
         data = self.es.common_search(
