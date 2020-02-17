@@ -309,21 +309,21 @@ class ElasticSearchDataStore(DataStoreBase):
                     'testrun_id': d.get('testrun_id'),
                     "case_id": d.get('case_id')
                 }
-                update = {
-                    "comment": d.get('comment'),
-                    "bugs": d.get('bugs')
-                }
-                self.es.update_es_by_query(d.get("index"), query, update)
+                update = {}
+                if d.get('comment'):
+                    update['comment'] = d.get('comment')
+                if update:
+                    self.es.update_es_by_query(d.get("index"), query, update)
 
                 # update bugs in case bugs mapping index
-                
-                mapping_index = self.get_case_bugs_mapping_index(d.get("index"))
-                data = {
-                        "case_id": d.get('case_id'),
-                        "bugs": d.get('bugs')
-                }
-                ret = self.es.index(index=mapping_index, body=data, id=d.get('case_id'))
-                print(ret)
+                if d.get('bugs'):
+                    mapping_index = self.get_case_bugs_mapping_index(d.get("index"))
+                    data = {
+                            "case_id": d.get('case_id'),
+                            "bugs": d.get('bugs')
+                    }
+                    ret = self.es.index(index=mapping_index, body=data, id=d.get('case_id'))
+                    print(ret)
 
                 updated += 1
         return updated
