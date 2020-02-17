@@ -310,13 +310,13 @@ class ElasticSearchDataStore(DataStoreBase):
                     "case_id": d.get('case_id')
                 }
                 update = {}
-                if d.get('comment'):
+                if 'comment' in d:
                     update['comment'] = d.get('comment')
                 if update:
                     self.es.update_es_by_query(d.get("index"), query, update)
 
                 # update bugs in case bugs mapping index
-                if d.get('bugs'):
+                if 'bugs' in d:
                     mapping_index = self.get_case_bugs_mapping_index(d.get("index"))
                     data = {
                             "case_id": d.get('case_id'),
