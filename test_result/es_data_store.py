@@ -82,6 +82,7 @@ class ElasticSearchDataStore(DataStoreBase):
 
         query_body = {
             "size": 0,
+            "track_total_hits": True,
             "aggs": {
                 "index_count": {
                     "cardinality": {
