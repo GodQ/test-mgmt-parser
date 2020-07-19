@@ -2,7 +2,7 @@ from flask import Blueprint
 import os
 
 
-bp = Blueprint("test_result", __name__, url_prefix="/api", static_folder="static")
+bp = Blueprint("test_result", __name__, url_prefix="/api")
 
 
 base_dir = os.path.dirname(__file__)

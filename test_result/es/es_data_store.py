@@ -222,6 +222,7 @@ class ElasticSearchDataStore(DataStoreBase):
             del params["index"]
         else:
             index = "test-result-*"
+            # raise Exception("Index is required")
         details_flag = params.get('details')
         if details_flag == True or isinstance(details_flag, str) and details_flag.lower()=='true':
             del params['details']

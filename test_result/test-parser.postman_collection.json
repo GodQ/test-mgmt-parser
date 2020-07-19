@@ -6,20 +6,91 @@
 	},
 	"item": [
 		{
+			"name": "get summary",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{host}}:{{port}}/api/summary",
+					"protocol": "http",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"summary"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "get summary",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://10.110.124.130:8080/api/summary",
+							"protocol": "http",
+							"host": [
+								"10",
+								"110",
+								"124",
+								"130"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"summary"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Powered-By",
+							"value": "Express"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "51"
+						},
+						{
+							"key": "server",
+							"value": "Werkzeug/0.16.0 Python/3.6.8"
+						},
+						{
+							"key": "date",
+							"value": "Wed, 15 Jan 2020 13:15:48 GMT"
+						},
+						{
+							"key": "connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"index_count\": 3,\n    \"testrun_count\": 160,\n    \"total\": 1970\n}"
+				}
+			]
+		},
+		{
 			"name": "get test_index",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://10.110.124.130:8080/api/test_index",
+					"raw": "http://{{host}}:{{port}}/api/test_index",
 					"protocol": "http",
 					"host": [
-						"10",
-						"110",
-						"124",
-						"130"
+						"{{host}}"
 					],
-					"port": "8080",
+					"port": "{{port}}",
 					"path": [
 						"api",
 						"test_index"
@@ -88,18 +159,22 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://10.110.124.130:8080/api/test_result",
+					"raw": "http://{{host}}:{{port}}/api/test_result",
 					"protocol": "http",
 					"host": [
-						"10",
-						"110",
-						"124",
-						"130"
+						"{{host}}"
 					],
-					"port": "8080",
+					"port": "{{port}}",
 					"path": [
 						"api",
 						"test_result"
+					],
+					"query": [
+						{
+							"key": "index",
+							"value": "test-result-app-launchpad",
+							"disabled": true
+						}
 					]
 				}
 			},
@@ -165,15 +240,12 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://10.110.124.130:8080/api/testruns?index=test-result-app-launchpad&id_only=true",
+					"raw": "http://{{host}}:{{port}}/api/testruns?index=test-result-app-launchpad&id_only=true",
 					"protocol": "http",
 					"host": [
-						"10",
-						"110",
-						"124",
-						"130"
+						"{{host}}"
 					],
-					"port": "8080",
+					"port": "{{port}}",
 					"path": [
 						"api",
 						"testruns"
@@ -257,20 +329,119 @@
 			]
 		},
 		{
+			"name": "get testruns id_only=false",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{host}}:{{port}}/api/testruns?index=test-result-app-launchpad&id_only=false&limit=10",
+					"protocol": "http",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"testruns"
+					],
+					"query": [
+						{
+							"key": "index",
+							"value": "test-result-app-launchpad"
+						},
+						{
+							"key": "id_only",
+							"value": "false"
+						},
+						{
+							"key": "limit",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "get testruns id_only=false",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://10.110.124.130:8080/api/testruns?index=test-result-app-launchpad&id_only=false&limit=10",
+							"protocol": "http",
+							"host": [
+								"10",
+								"110",
+								"124",
+								"130"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"testruns"
+							],
+							"query": [
+								{
+									"key": "index",
+									"value": "test-result-app-launchpad"
+								},
+								{
+									"key": "id_only",
+									"value": "false"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Powered-By",
+							"value": "Express"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "958"
+						},
+						{
+							"key": "server",
+							"value": "Werkzeug/0.16.0 Python/3.6.8"
+						},
+						{
+							"key": "date",
+							"value": "Wed, 15 Jan 2020 09:50:51 GMT"
+						},
+						{
+							"key": "connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"data\": [\n        {\n            \"case_count\": 6,\n            \"success\": 6,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 13:31:49\"\n        },\n        {\n            \"case_count\": 13,\n            \"success\": 13,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 13:53:16\"\n        },\n        {\n            \"case_count\": 13,\n            \"success\": 13,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 14:15:05\"\n        },\n        {\n            \"case_count\": 6,\n            \"success\": 6,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 14:21:59\"\n        },\n        {\n            \"case_count\": 6,\n            \"success\": 6,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 14:58:06\"\n        },\n        {\n            \"case_count\": 6,\n            \"success\": 6,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 15:03:51\"\n        },\n        {\n            \"case_count\": 17,\n            \"error\": 1,\n            \"failure\": 2,\n            \"success\": 14,\n            \"success_rate\": 82.3,\n            \"testrun_id\": \"2019-11-18 15:21:34\"\n        },\n        {\n            \"case_count\": 17,\n            \"error\": 1,\n            \"failure\": 2,\n            \"success\": 14,\n            \"success_rate\": 82.3,\n            \"testrun_id\": \"2019-11-18 16:49:39\"\n        },\n        {\n            \"case_count\": 17,\n            \"error\": 1,\n            \"failure\": 2,\n            \"success\": 14,\n            \"success_rate\": 82.3,\n            \"testrun_id\": \"2019-11-18 16:52:01\"\n        },\n        {\n            \"case_count\": 76,\n            \"error\": 60,\n            \"failure\": 2,\n            \"success\": 14,\n            \"success_rate\": 18.4,\n            \"testrun_id\": \"2019-11-19 10:27:26\"\n        }\n    ]\n}"
+				}
+			]
+		},
+		{
 			"name": "get test_result",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://10.110.124.130:8080/api/test_result?index=test-result-app-launchpad&testrun_id=2019-11-19+10:27:26&keyword=error",
+					"raw": "http://{{host}}:{{port}}/api/test_result?index=test-result-app-launchpad&testrun_id=2020-01-18-06-18-43&keyword=error",
 					"protocol": "http",
 					"host": [
-						"10",
-						"110",
-						"124",
-						"130"
+						"{{host}}"
 					],
-					"port": "8080",
+					"port": "{{port}}",
 					"path": [
 						"api",
 						"test_result"
@@ -282,7 +453,7 @@
 						},
 						{
 							"key": "testrun_id",
-							"value": "2019-11-19+10:27:26"
+							"value": "2020-01-18-06-18-43"
 						},
 						{
 							"key": "keyword",
@@ -375,7 +546,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"case_id\": \"TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03\",\n    \"case_name\": \"TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03\",\n    \"case_result\": \"error\",\n    \"doc_id\": \"V957gW4B6JSdAO9QIOkU\",\n    \"index\": \"test-result-app-launchpad\",\n    \"testrun_id\": \"2019-11-19 10:27:26\",\n    \"comment\": \"111111\"\n}",
+					"raw": "{\n    \"case_id\": \"TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03\",\n    \"doc_id\": \"V957gW4B6JSdAO9QIOkU\",\n    \"index\": \"test-result-app-launchpad\",\n    \"testrun_id\": \"2019-11-19 10:27:26\",\n    \"comment\": \"111111\",\n    \"bugs\": \"1\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -383,15 +554,12 @@
 					}
 				},
 				"url": {
-					"raw": "http://10.110.124.130:8080/api/test_result",
+					"raw": "http://{{host}}:{{port}}/api/test_result",
 					"protocol": "http",
 					"host": [
-						"10",
-						"110",
-						"124",
-						"130"
+						"{{host}}"
 					],
-					"port": "8080",
+					"port": "{{port}}",
 					"path": [
 						"api",
 						"test_result"
@@ -467,111 +635,6 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"updated\": 1\n}"
-				}
-			]
-		},
-		{
-			"name": "get testruns id_only=false",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://10.110.124.130:8080/api/testruns?index=test-result-app-launchpad&id_only=false&limit=10",
-					"protocol": "http",
-					"host": [
-						"10",
-						"110",
-						"124",
-						"130"
-					],
-					"port": "8080",
-					"path": [
-						"api",
-						"testruns"
-					],
-					"query": [
-						{
-							"key": "index",
-							"value": "test-result-app-launchpad"
-						},
-						{
-							"key": "id_only",
-							"value": "false"
-						},
-						{
-							"key": "limit",
-							"value": "10"
-						}
-					]
-				}
-			},
-			"response": [
-				{
-					"name": "get testruns id_only=false",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://10.110.124.130:8080/api/testruns?index=test-result-app-launchpad&id_only=false&limit=10",
-							"protocol": "http",
-							"host": [
-								"10",
-								"110",
-								"124",
-								"130"
-							],
-							"port": "8080",
-							"path": [
-								"api",
-								"testruns"
-							],
-							"query": [
-								{
-									"key": "index",
-									"value": "test-result-app-launchpad"
-								},
-								{
-									"key": "id_only",
-									"value": "false"
-								},
-								{
-									"key": "limit",
-									"value": "10"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "X-Powered-By",
-							"value": "Express"
-						},
-						{
-							"key": "content-type",
-							"value": "application/json"
-						},
-						{
-							"key": "content-length",
-							"value": "958"
-						},
-						{
-							"key": "server",
-							"value": "Werkzeug/0.16.0 Python/3.6.8"
-						},
-						{
-							"key": "date",
-							"value": "Wed, 15 Jan 2020 09:50:51 GMT"
-						},
-						{
-							"key": "connection",
-							"value": "keep-alive"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"data\": [\n        {\n            \"case_count\": 6,\n            \"success\": 6,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 13:31:49\"\n        },\n        {\n            \"case_count\": 13,\n            \"success\": 13,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 13:53:16\"\n        },\n        {\n            \"case_count\": 13,\n            \"success\": 13,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 14:15:05\"\n        },\n        {\n            \"case_count\": 6,\n            \"success\": 6,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 14:21:59\"\n        },\n        {\n            \"case_count\": 6,\n            \"success\": 6,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 14:58:06\"\n        },\n        {\n            \"case_count\": 6,\n            \"success\": 6,\n            \"success_rate\": 100,\n            \"testrun_id\": \"2019-11-18 15:03:51\"\n        },\n        {\n            \"case_count\": 17,\n            \"error\": 1,\n            \"failure\": 2,\n            \"success\": 14,\n            \"success_rate\": 82.3,\n            \"testrun_id\": \"2019-11-18 15:21:34\"\n        },\n        {\n            \"case_count\": 17,\n            \"error\": 1,\n            \"failure\": 2,\n            \"success\": 14,\n            \"success_rate\": 82.3,\n            \"testrun_id\": \"2019-11-18 16:49:39\"\n        },\n        {\n            \"case_count\": 17,\n            \"error\": 1,\n            \"failure\": 2,\n            \"success\": 14,\n            \"success_rate\": 82.3,\n            \"testrun_id\": \"2019-11-18 16:52:01\"\n        },\n        {\n            \"case_count\": 76,\n            \"error\": 60,\n            \"failure\": 2,\n            \"success\": 14,\n            \"success_rate\": 18.4,\n            \"testrun_id\": \"2019-11-19 10:27:26\"\n        }\n    ]\n}"
 				}
 			]
 		}

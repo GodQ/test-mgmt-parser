@@ -1,9 +1,11 @@
 from . import bp
 from flask import jsonify, request, make_response
 import json
+import traceback
 
-from .es_data_store import DataStore
-# from .mock_data_store import DataStore
+from .es.es_data_store import DataStore
+# from .mock.mock_data_store import DataStore
+# from .sql.sql_data_store import DataStore
 
 ds = DataStore()
 
@@ -54,11 +56,19 @@ def test_result():
         params = request.args.to_dict()
         if 'limit' not in params:
             params['limit'] = 500
-        data = ds.search_results(params)
-        resp = {
-            "data": data
-        }
-        return jsonify(resp), 200
+        try:
+            data = ds.search_results(params)
+            resp = {
+                "data": data
+            }
+            return jsonify(resp), 200
+        except Exception as e:
+            print("params:", params)
+            traceback.print_exc()
+            resp = {
+                "error": str(e)
+            }
+            return jsonify(resp), 400
     elif request.method == 'PATCH':
         if not body_json:
             resp = {

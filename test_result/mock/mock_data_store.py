@@ -3,7 +3,7 @@ from test_result.data_store_interface import DataStoreBase
 
 class MockDataStore(DataStoreBase):
     def get_testrun_list(self, params=None):
-        testrun_list_details = {
+        testrun_list_id_only = {
             "data": [
                 "2019-11-19 10:27:26",
                 "2019-11-18 16:52:01",
@@ -11,7 +11,7 @@ class MockDataStore(DataStoreBase):
                 "2019-11-18 15:21:34",
             ]
         }
-        testrun_list_id_only = {
+        testrun_list_details = {
             "data": [
                 {
                     "case_count": 505,
