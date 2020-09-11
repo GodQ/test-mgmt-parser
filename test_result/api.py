@@ -3,6 +3,7 @@ from flask import jsonify, request, make_response
 import json
 import traceback
 from test_result.data_store import DataStore
+from auth.auth import auth
 
 # from .es.data_store import DataStore
 # from .mock.mock_data_store import DataStore
@@ -17,6 +18,7 @@ def index():
 
 
 @bp.route('/summary', methods=['GET'])
+@auth.login_required
 def summary():
     summary = ds.get_summary()
     print(summary)
@@ -24,6 +26,7 @@ def summary():
 
 
 @bp.route('/test_index', methods=['GET'])
+@auth.login_required
 def test_index_list():
     args = request.args
     testruns = ds.get_test_index_list(args)
@@ -34,6 +37,7 @@ def test_index_list():
 
 
 @bp.route('/testruns', methods=['GET'])
+@auth.login_required
 def testrun_list():
     args = request.args
     testruns = ds.get_testrun_list(args)
@@ -44,6 +48,7 @@ def testrun_list():
 
 
 @bp.route('/test_result', methods=['GET', 'PATCH', 'POST'])
+@auth.login_required
 def test_result():
     print(request)
     print(request.args)
