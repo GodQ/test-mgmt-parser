@@ -1,4 +1,4 @@
 flask
 elasticsearch
 elasticsearch_dsl
-records
+pyyaml

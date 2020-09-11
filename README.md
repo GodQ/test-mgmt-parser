@@ -1,4 +1,4 @@
-# test-parser
+# test-mgmt-parser
 
 
 Install:

@@ -2,8 +2,9 @@ from . import bp
 from flask import jsonify, request, make_response
 import json
 import traceback
+from test_result.data_store import DataStore
 
-from .es.data_store import DataStore
+# from .es.data_store import DataStore
 # from .mock.mock_data_store import DataStore
 # from .sql.sql_data_store import DataStore
 
