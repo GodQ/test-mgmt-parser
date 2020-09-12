@@ -58,21 +58,20 @@ def create_user(user_name, password):
     return user
 
 
-def verify_auth(user_name, password):
+def load_user_by_name(user_name):
+    if not user_name:
+        raise BadRequest('No user_name!!')
     users = User.search().filter('term', user_name=user_name).execute().hits
     if len(users) == 0:
         raise BadRequest(f'There is no user named "{user_name}"')
     if len(users) > 1:
         raise BadRequest(f'There are too many users named "{user_name}"')
     user = users[0]
-    if not user.verify_password(password):
-        raise BadRequest(f'Error Auth for user "{user_name}"')
     return user
 
 
 def init_user_index():
     User.init()
     create_user('root', 'password')
-
 
 # init_user_index()

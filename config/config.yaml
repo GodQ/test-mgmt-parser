@@ -1,4 +1,4 @@
-
+SECRET_KEY: 'auth'
 data_store_type: 'es'
 
 es_hosts: ["10.110.124.130:9200"]
