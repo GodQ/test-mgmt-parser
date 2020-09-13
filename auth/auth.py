@@ -19,6 +19,21 @@ def get_user(token):
     return user
 
 
+def get_user_roles(auth):
+    roles = list(g.user.roles)
+    return roles
+
+
+@basic_auth.get_user_roles
+def get_user_roles_cb(auth):
+    return get_user_roles(auth)
+
+
+@token_auth.get_user_roles
+def get_user_roles_cb(auth):
+    return get_user_roles(auth)
+
+
 def verify_auth_password(user_name, password):
     try:
         user = load_user_by_name(user_name)

@@ -11,8 +11,9 @@ from auth.auth import auth, generate_auth_token
 
 
 @bp.route('/users', methods=['POST'])
-@auth.login_required
 def post_user():
+    if not request.json:
+        abort(400, "No user info")
     user_name = request.json.get('user_name')
     password = request.json.get('password')
     if user_name is None or password is None:
@@ -26,7 +27,7 @@ def post_user():
 
 
 @bp.route('/users', methods=['GET'])
-@auth.login_required
+@auth.login_required(role='admin')
 def get_all_users():
     users = list_users()
     return {'items': users}
