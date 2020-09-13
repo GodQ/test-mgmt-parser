@@ -44,6 +44,6 @@ def get_current_user():
 @auth.login_required
 def get_auth_token():
     token = generate_auth_token(g.user)
-    return jsonify({'token': token.decode('ascii')})
+    return jsonify({'token': token.decode('ascii')}), 201
 
 
