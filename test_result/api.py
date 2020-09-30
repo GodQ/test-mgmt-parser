@@ -48,7 +48,7 @@ def testrun_list():
 
 
 @bp.route('/test_result', methods=['GET'])
-@auth.login_required
+# @auth.login_required
 def get_test_result():
     print(request)
     print(request.args)
@@ -61,11 +61,14 @@ def get_test_result():
     if request.method == 'GET':
         params = request.args.to_dict()
         if 'limit' not in params:
-            params['limit'] = 500
+            params['limit'] = 10
+        if 'offset' not in params:
+            params['offset'] = 0
         try:
-            data = ds.search_results(params)
+            data, page_info = ds.search_results(params)
             resp = {
-                "data": data
+                "data": data,
+                "page_info": page_info
             }
             return jsonify(resp), 200
         except Exception as e:

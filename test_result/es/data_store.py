@@ -26,11 +26,15 @@ class ElasticSearchOperation:
 
     def common_search(self, search_obj: Search, **kwargs):
         assert search_obj
+        if kwargs.get('offset'):
+            offset = kwargs.get('offset')
+        else:
+            offset = 0
         if kwargs.get('limit'):
             limit = kwargs.get('limit')
         else:
             limit = 100
-        search_obj = search_obj[0:limit]
+        search_obj = search_obj[offset: offset+limit]
         if kwargs.get('index'):
             index = kwargs.get('index')
             search_obj = search_obj.index(index)
@@ -43,6 +47,10 @@ class ElasticSearchOperation:
             attach_id = kwargs.get('attach_id')
         else:
             attach_id = False
+        if kwargs.get('with_page_info') is not None:
+            with_page_info = kwargs.get('with_page_info')
+        else:
+            with_page_info = False
 
         print("\nES query:", search_obj.to_dict())
 
@@ -52,13 +60,22 @@ class ElasticSearchOperation:
             return res
 
         data = list()
+
         for hit in res.hits.hits:
             d = hit['_source'].to_dict()
             if attach_id:
                 d['index'] = hit['_index']
                 d['doc_id'] = hit['_id']
             data.append(d)
-        return data
+        if with_page_info is True:
+            page_info = {
+                "total": res.hits.total.value,
+                "limit": limit,
+                "offset": offset
+            }
+            return data, page_info
+        else:
+            return data
 
     def update_es_by_query(self, index, queries, updates):
         query_must = list()
@@ -220,10 +237,14 @@ class ElasticSearchDataStore(DataStoreBase):
     def search_results(self, params=None):
         if params is None:
             params = {}
-        limit = params.get("limit", 100)
+        limit = params.get("limit", 10)
         if not isinstance(limit, int):
             limit = int(limit)
         del params['limit']
+        offset = params.get("offset", 0)
+        if not isinstance(offset, int):
+            offset = int(offset)
+        del params['offset']
         if "index" in params:
             index = params["index"]
             del params["index"]
@@ -287,17 +308,21 @@ class ElasticSearchDataStore(DataStoreBase):
             for multi_match in multi_matches:
                 query_body["query"]["bool"]["must"].append({"multi_match": multi_match})
 
+        query_body['track_total_hits'] = True
         search_obj = Search.from_dict(query_body)
         search_obj = search_obj.sort(
             {"testrun_id.keyword": {"order": "desc"}},
             {"case_id.keyword": {"order": "asc"}}
         )
         search_obj = search_obj.source(search_source)
-        data = self.es.common_search(
+        data, page_info = self.es.common_search(
             search_obj=search_obj,
+            offset=offset,
             index=index,
             limit=limit,
-            attach_id=True)
+            attach_id=True,
+            with_page_info=True
+        )
         if data:
             case_bugs_mapping = self.get_case_bugs_mapping(index)
             if case_bugs_mapping:
@@ -305,7 +330,7 @@ class ElasticSearchDataStore(DataStoreBase):
                     case_id = item['case_id']
                     if case_id in case_bugs_mapping:
                         item['bugs'] = case_bugs_mapping[case_id]
-        return data
+        return data, page_info
 
     def update_results(self, items):
         updated = 0
