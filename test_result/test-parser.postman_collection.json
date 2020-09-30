@@ -6,8 +6,74 @@
 	},
 	"item": [
 		{
+			"name": "Get Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "cfba3f4b-4e9a-4f6b-8a34-0b3802681e65",
+						"exec": [
+							"pm.globals.set(\"token\", pm.response.json().token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://{{host}}:{{port}}/api/token",
+					"protocol": "http",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "get summary",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -82,6 +148,16 @@
 		{
 			"name": "get test_index",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -156,10 +232,20 @@
 		{
 			"name": "get test_result",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://{{host}}:{{port}}/api/test_result",
+					"raw": "http://{{host}}:{{port}}/api/test_result?limit=2",
 					"protocol": "http",
 					"host": [
 						"{{host}}"
@@ -174,6 +260,10 @@
 							"key": "index",
 							"value": "test-result-app-launchpad",
 							"disabled": true
+						},
+						{
+							"key": "limit",
+							"value": "2"
 						}
 					]
 				}
@@ -237,6 +327,16 @@
 		{
 			"name": "get testruns id_only true",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -331,6 +431,16 @@
 		{
 			"name": "get testruns id_only=false",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -433,6 +543,16 @@
 		{
 			"name": "get test_result",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -535,6 +655,16 @@
 		{
 			"name": "patch test_result",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "PATCH",
 				"header": [
 					{
@@ -547,6 +677,118 @@
 				"body": {
 					"mode": "raw",
 					"raw": "{\n    \"case_id\": \"TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03\",\n    \"doc_id\": \"V957gW4B6JSdAO9QIOkU\",\n    \"index\": \"test-result-app-launchpad\",\n    \"testrun_id\": \"2019-11-19 10:27:26\",\n    \"comment\": \"111111\",\n    \"bugs\": \"1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{host}}:{{port}}/api/test_result",
+					"protocol": "http",
+					"host": [
+						"{{host}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"test_result"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "patch test_result",
+					"originalRequest": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"case_id\": \"TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03\",\n    \"case_name\": \"TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03\",\n    \"case_result\": \"error\",\n    \"doc_id\": \"V957gW4B6JSdAO9QIOkU\",\n    \"index\": \"test-result-app-launchpad\",\n    \"testrun_id\": \"2019-11-19 10:27:26\",\n    \"comment\": \"111111\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://10.110.124.130:8080/api/test_result",
+							"protocol": "http",
+							"host": [
+								"10",
+								"110",
+								"124",
+								"130"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"test_result"
+							]
+						}
+					},
+					"status": "CREATED",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Powered-By",
+							"value": "Express"
+						},
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "14"
+						},
+						{
+							"key": "server",
+							"value": "Werkzeug/0.16.0 Python/3.6.8"
+						},
+						{
+							"key": "date",
+							"value": "Wed, 15 Jan 2020 09:49:56 GMT"
+						},
+						{
+							"key": "connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"updated\": 1\n}"
+				}
+			]
+		},
+		{
+			"name": "post test_result",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"case_id\": \"test-case-id-002\",\n    \"index\": \"test-result-tttt\",\n    \"testrun_id\": \"2019-11-20 10:27:26\",\n    \"comment\": \"333\",\n    \"bugs\": \"3\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"

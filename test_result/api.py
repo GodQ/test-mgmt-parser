@@ -1,5 +1,5 @@
 from . import bp
-from flask import jsonify, request, make_response
+from flask import jsonify, request, make_response, abort
 import json
 import traceback
 from test_result.data_store import DataStore
@@ -47,9 +47,9 @@ def testrun_list():
     return jsonify(resp), 200
 
 
-@bp.route('/test_result', methods=['GET', 'PATCH', 'POST'])
+@bp.route('/test_result', methods=['GET'])
 @auth.login_required
-def test_result():
+def get_test_result():
     print(request)
     print(request.args)
     print(request.data)
@@ -75,7 +75,20 @@ def test_result():
                 "error": str(e)
             }
             return jsonify(resp), 400
-    elif request.method == 'PATCH':
+
+
+@bp.route('/test_result', methods=['PATCH'])
+@auth.login_required
+def update_test_result():
+    print(request)
+    print(request.args)
+    print(request.data)
+    # print(request.json)
+
+    args = request.args
+    body_json = request.json
+
+    if request.method == 'PATCH':
         if not body_json:
             resp = {
                 "error": "no json body or header"
@@ -90,7 +103,23 @@ def test_result():
         else:
             status = 201
         return jsonify(resp), status
-    elif request.method == 'POST':
+
+
+@bp.route('/test_result', methods=['POST'])
+@auth.login_required
+def post_test_result():
+    print(request)
+    print(request.args)
+    print(request.data)
+    # print(request.json)
+
+    args = request.args
+    body_json = request.json
+    print(request.content_type)
+    if request.content_type != 'application/json':
+        abort(make_response(jsonify(error="Only json is supported"), 400))
+
+    if request.method == 'POST':
         if not body_json:
             resp = {
                 "error": "no json body or header"
@@ -105,3 +134,4 @@ def test_result():
         else:
             status = 201
         return jsonify(resp), status
+

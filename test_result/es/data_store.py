@@ -89,7 +89,20 @@ class ElasticSearchDataStore(DataStoreBase):
         return mapping_index
 
     def insert_results(self, results):
-        return
+        if not isinstance(results, list):
+            results = [results]
+        count = 0
+        for r in results:
+            index = r.get('content-category')
+            if not index:
+                index = r.get('index')
+            if not index:
+                print(f"No index or content-category field in result {r}")
+                continue
+            index = f"{self.test_result_prefix}-{index}"
+            self.es.index(index=index, body=r)
+            count += 1
+        return count
 
     def get_summary(self):
         data = dict()

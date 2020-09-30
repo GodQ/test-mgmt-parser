@@ -103,4 +103,24 @@ class DataStoreBase(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def insert_results(self, results):
+        """
+        results:
+        [{
+            "case_comment": "",
+            "testrun_id": "2020-09-30-06-19-20",
+            "method_name": "test_pa_get_top-app-usage_7",
+            "module_name": "vflow.testcase_loader",
+            "call_type": "schedule",
+            "suite_name": "regression",
+            "env": "alp100",
+            "case_id": "vflow.testcase_loader.system.statistics.app.test_pa_get_top-app-usage_7",
+            "func_doc": null,
+            "content-category": "test-result-app-launchpad",
+            "stdout": "",
+            "case_result": "success",
+            "case_tags": ["P2"],
+            "class_name": "system.statistics.app",
+            "traceback": ""
+        }]
+        """
         pass
