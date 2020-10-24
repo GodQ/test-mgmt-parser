@@ -29,6 +29,20 @@ class DataStoreBase(metaclass=abc.ABCMeta):
                 }
             ]
         }
+        or
+        /api/testruns?index=test-result-demo&testrun_id=123
+        {
+            "data": [
+                {
+                    case_count: 505,
+                    error: 6,
+                    failure: 48,
+                    success: 451,
+                    success_rate: 89.3,
+                    testrun_id: "123"
+                }
+            ]
+        }
         """
         pass
 

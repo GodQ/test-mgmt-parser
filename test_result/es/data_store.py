@@ -148,6 +148,9 @@ class ElasticSearchDataStore(DataStoreBase):
         if params is None:
             params = {}
         id_only = params.get("id_only", "true")
+        if "testrun_id" in params and params['testrun_id']:
+            id_only = "false"
+        id_only = id_only.lower()
         if id_only != "true":
             return self.get_testrun_list_details(params)
         else:
@@ -183,8 +186,12 @@ class ElasticSearchDataStore(DataStoreBase):
         limit = params.get("limit", 10)
         if not isinstance(limit, int):
             limit = int(limit)
+        testrun_id = params.get("testrun_id", None)
 
         search_obj = Search()
+        if testrun_id:
+            # search_obj = search_obj.filter("term", testrun_id=testrun_id)
+            search_obj = search_obj.query("match_phrase", testrun_id=testrun_id)
         search_obj.aggs.bucket('testruns', 'terms', field='testrun_id.keyword', size=limit, order={"_term": "desc"})\
             .metric('case_results', 'terms', field="case_result.keyword")
         es_data = self.es.common_search(

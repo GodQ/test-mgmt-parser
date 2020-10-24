@@ -156,10 +156,21 @@ def diff_test_result():
 
     if request.method == 'GET':
         params = request.args.to_dict()
+        if "testruns" not in params:
+            abort(make_response(jsonify(error="testruns must be set"), 400))
+        if "index" not in params:
+            abort(make_response(jsonify(error="index must be set"), 400))
         testruns = params['testruns'].split(',')
         diff = ds.get_diff_from_testrun(params['index'], testruns)
+        testrun_summary = []
+        for tr_id in testruns:
+            tr_info = ds.get_testrun_list(
+                {"index": params['index'], "testrun_id": tr_id}
+            )
+            testrun_summary.append(tr_info[0])
         resp = {
             "data": diff,
-            "testruns": testruns
+            "testruns": testruns,
+            "summary": testrun_summary
         }
         return resp, 200
