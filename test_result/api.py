@@ -1,9 +1,10 @@
-from . import bp
-from flask import jsonify, request, make_response, abort
-import json
 import traceback
-from test_result.data_store import DataStore
+
+from flask import jsonify, request, make_response, abort
+
 from auth.auth import auth
+from test_result.data_store import DataStore
+from . import bp
 
 # from .es.data_store import DataStore
 # from .mock.mock_data_store import DataStore
@@ -138,3 +139,27 @@ def post_test_result():
             status = 201
         return jsonify(resp), status
 
+
+@bp.route('/test_result_diff', methods=['GET'])
+@auth.login_required
+def diff_test_result():
+    '''
+    /api/test_result_diff?index=test-result-app-launchpad&testruns=2020-10-18-07-19-13,2020-10-17-12-27-34,2020-10-13-06-19-28'
+    '''
+    print(request)
+    print(request.args)
+    print(request.data)
+    # print(request.json)
+
+    args = request.args
+    body_json = request.json
+
+    if request.method == 'GET':
+        params = request.args.to_dict()
+        testruns = params['testruns'].split(',')
+        diff = ds.get_diff_from_testrun(params['index'], testruns)
+        resp = {
+            "data": diff,
+            "testruns": testruns
+        }
+        return resp, 200

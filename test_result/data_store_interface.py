@@ -124,3 +124,39 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         }]
         """
         pass
+
+    def get_diff_from_testrun(self, index: str, testruns: list):
+        def load_testrun_result(index, testrun_id):
+            testrun_result = {}
+            results_error, page_info = self.search_results({"index": index,
+                                                  "testrun_id": testrun_id,
+                                                  "case_result": 'error',
+                                                  "limit": 5000})
+            for res in results_error:
+                testrun_result[res['case_id']] = res
+            results_failure, page_info = self.search_results({"index": index,
+                                                    "testrun_id": testrun_id,
+                                                    "case_result": 'failure',
+                                                    "limit": 5000})
+            for res in results_failure:
+                testrun_result[res['case_id']] = res
+            return testrun_result
+
+        testrun_results = []
+        id_all = set()
+        for tr_id in testruns:
+            tr_result = load_testrun_result(index, tr_id)
+            testrun_results.append(tr_result)
+            id_all.update(set(tr_result.keys()))
+
+        diff = []
+        for case_id in id_all:
+            t = {"case_id": case_id, "results": []}
+            for i, tr_result in enumerate(testrun_results):
+                if case_id in tr_result:
+                    t['results'].append({'testrun_id': testruns[i], "result": tr_result[case_id]['case_result']})
+                else:
+                    t['results'].append({'testrun_id': testruns[i], "result": "success"})
+            diff.append(t)
+
+        return diff

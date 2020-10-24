@@ -240,11 +240,13 @@ class ElasticSearchDataStore(DataStoreBase):
         limit = params.get("limit", 10)
         if not isinstance(limit, int):
             limit = int(limit)
-        del params['limit']
+        if "limit" in params:
+            del params['limit']
         offset = params.get("offset", 0)
         if not isinstance(offset, int):
             offset = int(offset)
-        del params['offset']
+        if "offset" in params:
+            del params['offset']
         if "index" in params:
             index = params["index"]
             del params["index"]
