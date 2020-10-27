@@ -2,6 +2,7 @@ from elasticsearch import Elasticsearch
 import elasticsearch
 import copy
 import sys
+import time
 from pprint import pprint
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import MultiMatch, Match
@@ -115,6 +116,10 @@ class ElasticSearchDataStore(DataStoreBase):
                 continue
             if not index.startswith(self.test_result_prefix):
                 index = f"{self.test_result_prefix}{index}"
+            if "timestamp" not in r:
+                r['@timestamp'] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time()))
+            if "created_time" not in r:
+                r['created_time'] = r['@timestamp']
             self.es.index(index=index, body=r)
             count += 1
         return count
