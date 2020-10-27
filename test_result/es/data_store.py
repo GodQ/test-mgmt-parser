@@ -96,8 +96,7 @@ class ElasticSearchOperation:
 
 class ElasticSearchDataStore(DataStoreBase):
     es = ElasticSearchOperation()
-    test_result_prefix = "test-result-"
-    test_result_index = "{}*".format(test_result_prefix)
+    test_result_index = "{}*".format(DataStoreBase.test_result_prefix)
     search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
 
     def get_case_bugs_mapping_index(self, index):
@@ -110,13 +109,12 @@ class ElasticSearchDataStore(DataStoreBase):
             results = [results]
         count = 0
         for r in results:
-            index = r.get('content-category')
+            index = r.get('index')
             if not index:
-                index = r.get('index')
-            if not index:
-                print(f"No index or content-category field in result {r}")
+                print(f"No index or content-category or project field in result {r}")
                 continue
-            index = f"{self.test_result_prefix}-{index}"
+            if not index.startswith(self.test_result_prefix):
+                index = f"{self.test_result_prefix}{index}"
             self.es.index(index=index, body=r)
             count += 1
         return count
@@ -193,20 +191,25 @@ class ElasticSearchDataStore(DataStoreBase):
             # search_obj = search_obj.filter("term", testrun_id=testrun_id)
             search_obj = search_obj.query("match_phrase", testrun_id=testrun_id)
         search_obj.aggs.bucket('testruns', 'terms', field='testrun_id.keyword', size=limit, order={"_term": "desc"})\
-            .metric('case_results', 'terms', field="case_result.keyword")
+            .metric('case_results', 'terms', field="case_result.keyword") \
+            .metric('suite_name', 'terms', field="suite_name.keyword") \
+            .metric('env', 'terms', field="env.keyword")
         es_data = self.es.common_search(
             search_obj=search_obj,
             index=index,
-            limit=0,
+            limit=1,
             raw_result=True
         )
-        # pprint(es_data)
+        # pprint(len(es_data.hits.hits))
         if not es_data:
             return {}
         data = list()
         for testrun in es_data.aggregations.testruns.buckets:
+            # print(testrun['env'].buckets)
             item = dict()
             item['testrun_id'] = testrun['key']
+            item['env'] = testrun['env']['buckets'][0]['key']
+            item['suite_name'] = testrun['suite_name']['buckets'][0]['key']
             item['case_count'] = testrun['doc_count']
             for status in testrun['case_results']['buckets']:
                 item[status['key']] = status['doc_count']
@@ -229,7 +232,7 @@ class ElasticSearchDataStore(DataStoreBase):
         search_obj = Search()
         search_obj.sort({"_index": {"order": "desc"}})
         search_obj = search_obj.source(['testrun_id'])
-        print(search_obj.to_dict())
+        # print(search_obj.to_dict())
         data = self.es.common_search(
             search_obj=search_obj,
             index=self.test_result_index,
@@ -303,7 +306,7 @@ class ElasticSearchDataStore(DataStoreBase):
                     "fields": ["*"],
                     # "operator": "or"
                 })
-                print('**************')
+                # print('**************')
 
         query_must = list()
         for k, v in params.items():

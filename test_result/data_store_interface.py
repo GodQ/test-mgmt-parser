@@ -1,7 +1,37 @@
 import abc
 
 
+def check_post_result_fields(func):
+    def func_t(self, results):
+        if not isinstance(results, list):
+            results = [results]
+        required_fields = ['testrun_id', 'case_id', 'case_result']
+        optional_fields = ['case_tags', 'traceback', 'case_comment', 'suite_name', 'env', 'call_type', 'bugs']
+        index_fields = ['index', 'project', 'content-category']
+        for result in results:
+            for f in required_fields:
+                assert f in result, f"field {f} is required"
+            index = None
+            if 'index' in result:
+                pass
+            elif 'project' in result:
+                index = f"{self.test_result_prefix}{result['project']}"
+                result['index'] = index
+                del result['project']
+            elif 'content-category' in result:
+                index = f"{self.test_result_prefix}{result['content-category']}"
+                result['index'] = index
+                del result['content-category']
+            assert 'index' in result, f"No index or content-category or project field in result {result}"
+            assert result['case_result'] in ['failure', 'success', 'error', 'skip'], \
+                f"case_result must be in ['failure','success','error','skip'] but it is {result['case_result']}"
+        return func(self, results)
+    return func_t
+
+
 class DataStoreBase(metaclass=abc.ABCMeta):
+    test_result_prefix = "test-result-"
+
     @abc.abstractmethod
     def get_testrun_list(self, params=None):
         """
@@ -114,6 +144,17 @@ class DataStoreBase(metaclass=abc.ABCMeta):
             }
         """
         pass
+
+    @check_post_result_fields
+    def batch_insert_results(self, results):
+        count = 0
+        for result in results:
+            try:
+                self.insert_results(result)
+                count += 1
+            except Exception as e:
+                print(e)
+        return count
 
     @abc.abstractmethod
     def insert_results(self, results):

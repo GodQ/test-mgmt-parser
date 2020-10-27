@@ -129,14 +129,24 @@ def post_test_result():
                 "error": "no json body or header"
             }
             return jsonify(resp), 400
-        updated = ds.insert_results(body_json)
-        resp = {
-            "updated": updated
-        }
-        if updated == 0:
-            status = 404
-        else:
-            status = 201
+        if not isinstance(body_json, list):
+            body_json = [body_json]
+        try:
+            updated = ds.batch_insert_results(body_json)
+            resp = {
+                "updated": updated
+            }
+            if updated == 0:
+                status = 404
+            else:
+                status = 201
+        except Exception as e:
+            error_msg = str(e)
+            resp = {
+                "error": error_msg
+            }
+            status = 400
+
         return jsonify(resp), status
 
 
