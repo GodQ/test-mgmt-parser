@@ -1,4 +1,16 @@
-SECRET_KEY: 'auth'
+SECRET_KEY: 'godq'
 data_store_type: 'es'
 
-es_hosts: ["10.110.124.130:9200"]
+#es_hosts: ["10.110.124.130:9200"]
+es_hosts: ["127.0.0.1:9200"]
+
+users:
+  - name: 'admin'
+    password: 'password'
+    role: 'admin'
+  - name: 'user1'
+    password: 'password'
+    role: 'user'
+  - name: 'user2'
+    password: 'password'
+    role: 'user'

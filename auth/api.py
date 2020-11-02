@@ -3,7 +3,7 @@ from flask import jsonify, request, make_response, abort, g
 import json
 import traceback
 
-from auth.model import User, create_user, list_users
+from auth.model import User, add_user, list_users
 from auth.auth import auth, generate_auth_token
 
 # curl -v -X POST 127.0.0.1:5000/api/token -u root:password
@@ -19,7 +19,7 @@ def post_user():
     if user_name is None or password is None:
         abort(400)  # missing arguments
     try:
-        user = create_user(user_name=user_name, password=password)
+        user = add_user(user_name=user_name, password=password)
         return {'user_name': user.username, 'id': user.id}
     except Exception as e:
         msg = str(e)

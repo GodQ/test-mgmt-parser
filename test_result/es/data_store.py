@@ -7,16 +7,18 @@ from pprint import pprint
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import MultiMatch, Match
 from elasticsearch_dsl import connections, Document, Nested, Date, Integer, Keyword, Text
-
+from config.config import Config
 from test_result.data_store_interface import DataStoreBase
 
+
+ES_HOSTS = Config.get_config('es_hosts')
 # Define a default Elasticsearch client
-connections.create_connection(hosts=["10.110.124.130:9200"])
+connections.create_connection(hosts=ES_HOSTS)
 
 
 class ElasticSearchOperation:
     def __init__(self):
-        hosts = ["10.110.124.130:9200"]
+        hosts = ES_HOSTS
         self.es = Elasticsearch(hosts=hosts)
 
     def search(self, **kwargs):
@@ -213,8 +215,11 @@ class ElasticSearchDataStore(DataStoreBase):
             # print(testrun['env'].buckets)
             item = dict()
             item['testrun_id'] = testrun['key']
-            item['env'] = testrun['env']['buckets'][0]['key']
-            item['suite_name'] = testrun['suite_name']['buckets'][0]['key']
+            try:
+                item['env'] = testrun['env']['buckets'][0]['key']
+                item['suite_name'] = testrun['suite_name']['buckets'][0]['key']
+            except Exception as e:
+                print(e)
             item['case_count'] = testrun['doc_count']
             for status in testrun['case_results']['buckets']:
                 item[status['key']] = status['doc_count']

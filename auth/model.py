@@ -1,5 +1,6 @@
 from uuid import uuid4
 import json
+from config.config import Config
 
 from elasticsearch_dsl import Document, Keyword, Text
 from passlib.apps import custom_app_context as pwd_context
@@ -59,7 +60,7 @@ def list_users():
     return ret
 
 
-def create_user(user_name, password, roles=None):
+def add_user(user_name, password, roles=None):
     if not user_name:
         raise BadRequest('No user_name!!')
     search_result = User.search().filter('term', user_name=user_name).execute()
@@ -85,10 +86,17 @@ def load_user_by_name(user_name):
     return user
 
 
-def init_user_index():
+def init_users():
     User.init()
-    create_user('admin', 'password', 'admin')
-    create_user('tu', 'password')
+    users = Config.get_config('users')
+    for user in users:
+        user_name = user.get('name', 'user')
+        user_password = user.get('password', 'password')
+        user_role = user.get('role', 'user')
+        try:
+            add_user(user_name, user_password, user_role)
+        except DuplicatedUserName as e:
+            print(f"User name {user_name} has existed")
 
 
 # init_user_index()
