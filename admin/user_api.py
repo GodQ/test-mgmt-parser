@@ -36,6 +36,7 @@ def get_all_users():
 
 
 @bp.route('/users/<user_name>', methods=['DELETE'])
+@auth.login_required(role='admin')
 def delete_user(user_name):
     try:
         user = load_user_by_name(user_name=user_name)
