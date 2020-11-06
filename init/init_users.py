@@ -1,5 +1,5 @@
 
-from auth.model import init_users
+from common.user_model import init_users
 
 
 if __name__ == '__main__':
