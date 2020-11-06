@@ -32,12 +32,14 @@ def post_user():
 @auth.login_required(role='admin')
 def get_all_users():
     users = list_users()
-    return {'items': users}
+    return {'data': users}
 
 
 @bp.route('/users/<user_name>', methods=['DELETE'])
 @auth.login_required(role='admin')
 def delete_user(user_name):
+    if user_name == 'admin':
+        abort(make_response(jsonify(error="User admin can not be deleted"), 403))
     try:
         user = load_user_by_name(user_name=user_name)
         user.delete()
