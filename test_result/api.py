@@ -177,7 +177,8 @@ def diff_test_result():
             tr_info = ds.get_testrun_list(
                 {"index": params['index'], "testrun_id": tr_id}
             )
-            testrun_summary.append(tr_info[0])
+            if len(tr_info) > 0:
+                testrun_summary.append(tr_info[0])
         resp = {
             "data": diff,
             "testruns": testruns,
