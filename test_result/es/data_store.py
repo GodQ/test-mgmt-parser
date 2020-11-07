@@ -24,6 +24,14 @@ class ElasticSearchOperation:
     def search(self, **kwargs):
         return self.es.search(**kwargs)
 
+    def get_index_list(self, prefix=''):
+        all_indexes = self.es.indices.get_alias().keys()
+        res = []
+        for i in all_indexes:
+            if str(i).startswith(prefix):
+                res.append(str(i))
+        return res
+
     def index(self, **kwargs):
         return self.es.index(**kwargs)
 
@@ -239,19 +247,8 @@ class ElasticSearchDataStore(DataStoreBase):
         if not isinstance(limit, int):
             limit = int(limit)
 
-        search_obj = Search()
-        search_obj.sort({"_index": {"order": "desc"}})
-        search_obj = search_obj.source(['testrun_id'])
-        # print(search_obj.to_dict())
-        data = self.es.common_search(
-            search_obj=search_obj,
-            index=self.test_result_index,
-            limit=limit,
-            attach_id=True)
-        index_set = set()
-        for d in data:
-            index_set.add(d['index'])
-        data = [d for d in index_set]
+        data = self.es.get_index_list(prefix=DataStoreBase.test_result_prefix)
+        data = data[:limit]
         return data
 
     def search_results(self, params=None):
