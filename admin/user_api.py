@@ -17,7 +17,7 @@ def post_user():
         abort(make_response(jsonify(error="No user info"), 400))
     user_name = request.json.get('user_name')
     password = request.json.get('password')
-    role = request.json.get('role', 'user')
+    role = request.json.get('role', 'developer')
     if user_name is None or password is None:
         abort(make_response(jsonify(error="user_name or password is missing"), 400))
     try:

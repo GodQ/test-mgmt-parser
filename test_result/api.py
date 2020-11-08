@@ -49,7 +49,7 @@ def testrun_list():
 
 
 @bp.route('/test_result', methods=['GET'])
-# @auth.login_required
+@auth.login_required
 def get_test_result():
     print(request)
     print(request.args)
@@ -82,7 +82,7 @@ def get_test_result():
 
 
 @bp.route('/test_result', methods=['PATCH'])
-@auth.login_required
+@auth.login_required(role=['admin', 'developer'])
 def update_test_result():
     print(request)
     print(request.args)
@@ -110,7 +110,7 @@ def update_test_result():
 
 
 @bp.route('/test_result', methods=['POST'])
-@auth.login_required
+@auth.login_required(role=['admin', 'developer'])
 def post_test_result():
     print(request)
     print(request.args)

@@ -6,8 +6,8 @@ from elasticsearch_dsl import Document, Keyword, Text
 from passlib.apps import custom_app_context as pwd_context
 import config.es_connection
 
-default_role = 'user'
-role_set = ['admin', 'user']
+default_role = 'developer'
+role_set = ['admin', 'developer', 'viewer']
 
 
 class User(Document):
@@ -91,7 +91,7 @@ def init_users():
     for user in users:
         user_name = user.get('name', 'user')
         user_password = user.get('password', 'password')
-        user_role = user.get('role', 'user')
+        user_role = user.get('role', 'developer')
         try:
             add_user(user_name, user_password, user_role)
         except DuplicatedUserName as e:
