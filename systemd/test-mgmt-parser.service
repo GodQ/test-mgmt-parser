@@ -1,0 +1,13 @@
+[Unit]
+Description=Test Management System Backend
+StartLimitIntervalSec=30
+StartLimitBurst=3
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c 'source venv/bin/activate && python app.py'
+Restart=always
+WorkingDirectory=/root/test-mgmt/test-mgmt-parser
+
+[Install]
+WantedBy=multi-user.target
