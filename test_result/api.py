@@ -150,6 +150,51 @@ def post_test_result():
         return jsonify(resp), status
 
 
+@bp.route('/test_result/<string:target_index>', methods=['POST'])
+@auth.login_required(role=['admin', 'developer'])
+def post_test_result_with_index(target_index):
+    print(request)
+    print(request.args)
+    print(request.data)
+    # print(request.json)
+
+    args = request.args
+    body_json = request.json
+    print(request.content_type)
+    if request.content_type != 'application/json':
+        abort(make_response(jsonify(error="Only json is supported"), 400))
+
+    if request.method == 'POST':
+        if not body_json:
+            resp = {
+                "error": "no json body or header"
+            }
+            return jsonify(resp), 400
+        if not isinstance(body_json, list):
+            body_json = [body_json]
+
+        for i in body_json:
+            i['index'] = target_index
+
+        try:
+            updated = ds.batch_insert_results(body_json)
+            resp = {
+                "updated": updated
+            }
+            if updated == 0:
+                status = 404
+            else:
+                status = 201
+        except Exception as e:
+            error_msg = str(e)
+            resp = {
+                "error": error_msg
+            }
+            status = 400
+
+        return jsonify(resp), status
+
+
 @bp.route('/test_result_diff', methods=['GET'])
 @auth.login_required
 def diff_test_result():
