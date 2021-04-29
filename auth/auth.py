@@ -4,7 +4,7 @@ from common.user_model import User, BadRequest, DuplicatedUserName, load_user_by
 from config.config import Config
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 
-basic_auth = HTTPBasicAuth()
+basic_auth = HTTPBasicAuth(scheme='NoAction')
 token_auth = HTTPTokenAuth(scheme='Bearer')
 auth = MultiAuth(basic_auth, token_auth)
 

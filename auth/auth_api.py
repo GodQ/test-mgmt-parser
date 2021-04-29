@@ -16,12 +16,12 @@ def get_current_user():
     return user.to_dict()
 
 
-@bp.route('/token', methods=['POST'])
+@bp.route('/access_token', methods=['POST'])
 @auth.login_required
 def get_auth_token():
     token = generate_auth_token(g.user)
     resp = {
-        'token': token.decode('ascii'),
+        'access_token': token.decode('ascii'),
         'user_name': g.user.user_name,
         'role': g.user.role
     }
