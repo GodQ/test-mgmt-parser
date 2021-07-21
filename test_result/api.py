@@ -26,7 +26,7 @@ def summary():
     return jsonify(summary), 200
 
 
-@bp.route('/test_index', methods=['GET'])
+@bp.route('/projects', methods=['GET'])
 @auth.login_required
 def test_index_list():
     args = request.args
@@ -37,10 +37,11 @@ def test_index_list():
     return jsonify(resp), 200
 
 
-@bp.route('/testruns', methods=['GET'])
+@bp.route('/projects/<string:project_id>/testruns', methods=['GET'])
 @auth.login_required
-def testrun_list():
-    args = request.args
+def testrun_list(project_id):
+    args = request.args.to_dict()
+    args['index'] = project_id
     testruns = ds.get_testrun_list(args)
     resp = {
         "data": testruns
@@ -48,9 +49,9 @@ def testrun_list():
     return jsonify(resp), 200
 
 
-@bp.route('/test_result', methods=['GET'])
+@bp.route('/projects/<string:project_id>/test_results', methods=['GET'])
 @auth.login_required
-def get_test_result():
+def get_test_result(project_id):
     print(request)
     print(request.args)
     print(request.data)
@@ -61,6 +62,7 @@ def get_test_result():
 
     if request.method == 'GET':
         params = request.args.to_dict()
+        params['index'] = project_id
         if 'limit' not in params:
             params['limit'] = 10
         if 'offset' not in params:
@@ -81,9 +83,9 @@ def get_test_result():
             return jsonify(resp), 400
 
 
-@bp.route('/test_result', methods=['PATCH'])
+@bp.route('/projects/<string:project_id>/test_results', methods=['PATCH'])
 @auth.login_required(role=['admin', 'developer'])
-def update_test_result():
+def update_test_result(project_id):
     print(request)
     print(request.args)
     print(request.data)
@@ -98,7 +100,13 @@ def update_test_result():
                 "error": "no json body or header"
             }
             return jsonify(resp), 400
-        updated = ds.update_results(body_json)
+        if isinstance(body_json, list):
+            items = body_json
+        else:
+            items = [body_json]
+        for i in items:
+            i['index'] = project_id
+        updated = ds.update_results(items)
         resp = {
             "updated": updated
         }
@@ -109,50 +117,50 @@ def update_test_result():
         return jsonify(resp), status
 
 
-@bp.route('/test_result', methods=['POST'])
+# @bp.route('/test_results', methods=['POST'])
+# @auth.login_required(role=['admin', 'developer'])
+# def post_test_result():
+#     print(request)
+#     print(request.args)
+#     print(request.data)
+#     # print(request.json)
+#
+#     args = request.args
+#     body_json = request.json
+#     print(request.content_type)
+#     if request.content_type != 'application/json':
+#         abort(make_response(jsonify(error="Only json is supported"), 400))
+#
+#     if request.method == 'POST':
+#         if not body_json:
+#             resp = {
+#                 "error": "no json body or header"
+#             }
+#             return jsonify(resp), 400
+#         if not isinstance(body_json, list):
+#             body_json = [body_json]
+#         try:
+#             updated = ds.batch_insert_results(body_json)
+#             resp = {
+#                 "updated": updated
+#             }
+#             if updated == 0:
+#                 status = 404
+#             else:
+#                 status = 201
+#         except Exception as e:
+#             error_msg = str(e)
+#             resp = {
+#                 "error": error_msg
+#             }
+#             status = 400
+#
+#         return jsonify(resp), status
+
+
+@bp.route('/projects/<string:project_id>/test_results', methods=['POST'])
 @auth.login_required(role=['admin', 'developer'])
-def post_test_result():
-    print(request)
-    print(request.args)
-    print(request.data)
-    # print(request.json)
-
-    args = request.args
-    body_json = request.json
-    print(request.content_type)
-    if request.content_type != 'application/json':
-        abort(make_response(jsonify(error="Only json is supported"), 400))
-
-    if request.method == 'POST':
-        if not body_json:
-            resp = {
-                "error": "no json body or header"
-            }
-            return jsonify(resp), 400
-        if not isinstance(body_json, list):
-            body_json = [body_json]
-        try:
-            updated = ds.batch_insert_results(body_json)
-            resp = {
-                "updated": updated
-            }
-            if updated == 0:
-                status = 404
-            else:
-                status = 201
-        except Exception as e:
-            error_msg = str(e)
-            resp = {
-                "error": error_msg
-            }
-            status = 400
-
-        return jsonify(resp), status
-
-
-@bp.route('/test_result/<string:target_index>', methods=['POST'])
-@auth.login_required(role=['admin', 'developer'])
-def post_test_result_with_index(target_index):
+def post_test_result_with_index(project_id):
     print(request)
     print(request.args)
     print(request.data)
@@ -174,7 +182,7 @@ def post_test_result_with_index(target_index):
             body_json = [body_json]
 
         for i in body_json:
-            i['index'] = target_index
+            i['index'] = project_id
 
         try:
             updated = ds.batch_insert_results(body_json)
@@ -195,9 +203,9 @@ def post_test_result_with_index(target_index):
         return jsonify(resp), status
 
 
-@bp.route('/test_result_diff', methods=['GET'])
+@bp.route('/projects/<string:project_id>/test_result_diff', methods=['GET'])
 @auth.login_required
-def diff_test_result():
+def diff_test_result(project_id):
     '''
     /api/test_result_diff?index=test-result-app-launchpad&testruns=2020-10-18-07-19-13,2020-10-17-12-27-34,2020-10-13-06-19-28'
     '''
@@ -211,6 +219,7 @@ def diff_test_result():
 
     if request.method == 'GET':
         params = request.args.to_dict()
+        params['index'] = project_id
         if "testruns" not in params:
             abort(make_response(jsonify(error="testruns must be set"), 400))
         if "index" not in params:

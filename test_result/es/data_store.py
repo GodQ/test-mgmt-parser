@@ -353,11 +353,8 @@ class ElasticSearchDataStore(DataStoreBase):
 
     def update_results(self, items):
         updated = 0
-        if isinstance(items, list):
-            data = items
-        else:
-            data = [items]
-        for i, d in enumerate(data):
+        assert isinstance(items, list)
+        for i, d in enumerate(items):
             if d.get('case_id') and d.get('testrun_id') and d.get("index"):
                 # update comment in test-results index
                 query = {
