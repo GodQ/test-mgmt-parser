@@ -28,9 +28,9 @@ def summary():
 
 @bp.route('/projects', methods=['GET'])
 @auth.login_required
-def test_index_list():
+def test_project_list():
     args = request.args
-    testruns = ds.get_test_index_list(args)
+    testruns = ds.get_project_list(args)
     resp = {
         "data": testruns
     }
@@ -41,7 +41,7 @@ def test_index_list():
 @auth.login_required
 def testrun_list(project_id):
     args = request.args.to_dict()
-    args['index'] = project_id
+    args['project_id'] = project_id
     testruns = ds.get_testrun_list(args)
     resp = {
         "data": testruns
@@ -62,7 +62,7 @@ def get_test_result(project_id):
 
     if request.method == 'GET':
         params = request.args.to_dict()
-        params['index'] = project_id
+        params['project_id'] = project_id
         if 'limit' not in params:
             params['limit'] = 10
         if 'offset' not in params:
@@ -105,7 +105,7 @@ def update_test_result(project_id):
         else:
             items = [body_json]
         for i in items:
-            i['index'] = project_id
+            i['project_id'] = project_id
         updated = ds.update_results(items)
         resp = {
             "updated": updated
@@ -160,7 +160,7 @@ def update_test_result(project_id):
 
 @bp.route('/projects/<string:project_id>/test_results', methods=['POST'])
 @auth.login_required(role=['admin', 'developer'])
-def post_test_result_with_index(project_id):
+def post_test_result_with_project_id(project_id):
     print(request)
     print(request.args)
     print(request.data)
@@ -182,7 +182,7 @@ def post_test_result_with_index(project_id):
             body_json = [body_json]
 
         for i in body_json:
-            i['index'] = project_id
+            i['project'] = project_id
 
         try:
             updated = ds.batch_insert_results(body_json)
@@ -207,7 +207,7 @@ def post_test_result_with_index(project_id):
 @auth.login_required
 def diff_test_result(project_id):
     '''
-    /api/test_result_diff?index=test-result-app-launchpad&testruns=2020-10-18-07-19-13,2020-10-17-12-27-34,2020-10-13-06-19-28'
+    /api/projects/project_id/test_result_diff?testruns=2020-10-18-07-19-13,2020-10-17-12-27-34,2020-10-13-06-19-28'
     '''
     print(request)
     print(request.args)
@@ -219,17 +219,15 @@ def diff_test_result(project_id):
 
     if request.method == 'GET':
         params = request.args.to_dict()
-        params['index'] = project_id
+        params['project_id'] = project_id
         if "testruns" not in params:
             abort(make_response(jsonify(error="testruns must be set"), 400))
-        if "index" not in params:
-            abort(make_response(jsonify(error="index must be set"), 400))
         testruns = params['testruns'].split(',')
-        diff = ds.get_diff_from_testrun(params['index'], testruns)
+        diff = ds.get_diff_from_testrun(params['project_id'], testruns)
         testrun_summary = []
         for tr_id in testruns:
             tr_info = ds.get_testrun_list(
-                {"index": params['index'], "testrun_id": tr_id}
+                {"project_id": params['project_id'], "testrun_id": tr_id}
             )
             if len(tr_info) > 0:
                 testrun_summary.append(tr_info[0])

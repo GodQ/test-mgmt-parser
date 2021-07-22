@@ -560,7 +560,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"case_id\": \"TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03\",\n    \"doc_id\": \"V957gW4B6JSdAO9QIOkU\",\n    \"index\": \"test-result-app-launchpad\",\n    \"testrun_id\": \"2019-11-19 10:27:26\",\n    \"comment\": \"111111\",\n    \"bugs\": \"1\"\n}",
+							"raw": "{\n    \"case_id\": \"TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03\",\n    \"doc_id\": \"V957gW4B6JSdAO9QIOkU\",\n    \"project_id\": \"test-result-test\",\n    \"testrun_id\": \"2019-11-19 10:27:26\",\n    \"comment\": \"111111\",\n    \"bugs\": \"1\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -665,7 +665,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"case_id\": \"test-case-id-004\",\n    \"index\": \"test-result-tttt\",\n    \"testrun_id\": \"2019-11-20 10:27:26\",\n    \"case_result\": \"error\",\n    \"comment\": \"333\",\n    \"bugs\": \"3\"\n}",
+							"raw": "{\n    \"case_id\": \"test-case-id-004\",\n    \"project_id\": \"test-result-test\",\n    \"testrun_id\": \"2019-11-20 10:27:26\",\n    \"case_result\": \"error\",\n    \"comment\": \"333\",\n    \"bugs\": \"3\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

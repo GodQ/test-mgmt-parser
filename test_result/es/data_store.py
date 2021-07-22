@@ -111,6 +111,7 @@ class ElasticSearchDataStore(DataStoreBase):
     search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
 
     def get_case_bugs_mapping_index(self, index):
+        assert index
         project = index.replace(self.test_result_prefix, "", 1)
         mapping_index = project.strip() + "_case_bugs"
         return mapping_index
@@ -120,9 +121,9 @@ class ElasticSearchDataStore(DataStoreBase):
             results = [results]
         count = 0
         for r in results:
-            index = r.get('index')
+            index = r.get('project_id')
             if not index:
-                print(f"No index or content-category or project field in result {r}")
+                print(f"No index or project_id or content-category or project field in result {r}")
                 continue
             if not index.startswith(self.test_result_prefix):
                 index = f"{self.test_result_prefix}{index}"
@@ -142,7 +143,7 @@ class ElasticSearchDataStore(DataStoreBase):
         }
         # es_data = self.es.search(index=self.test_result_index, body=query_body)
         search_obj = Search.from_dict(query_body)
-        search_obj.aggs.bucket('index_count', 'cardinality', field='_index')
+        search_obj.aggs.bucket('project_count', 'cardinality', field='_index')
         search_obj.aggs.bucket('testrun_count', 'cardinality', field='testrun_id.keyword')
         es_data = self.es.common_search(
             search_obj=search_obj,
@@ -152,7 +153,7 @@ class ElasticSearchDataStore(DataStoreBase):
         )
 
         data["total"] = es_data.hits.total.value
-        data['index_count'] = es_data.aggregations.index_count.value
+        data['project_count'] = es_data.aggregations.project_count.value
         data['testrun_count'] = es_data.aggregations.testrun_count.value
 
         return data
@@ -172,7 +173,7 @@ class ElasticSearchDataStore(DataStoreBase):
     def get_testrun_list_id_only(self, params=None):
         if params is None:
             params = {}
-        index = params.get("index", self.test_result_index)
+        index = params.get("project_id", self.test_result_index)
         limit = params.get("limit", 1000)
         if not isinstance(limit, int):
             limit = int(limit)
@@ -195,7 +196,7 @@ class ElasticSearchDataStore(DataStoreBase):
     def get_testrun_list_details(self, params=None):
         if params is None:
             params = {}
-        index = params.get("index", self.test_result_index)
+        index = params.get("project_id", self.test_result_index)
         limit = params.get("limit", 10)
         if not isinstance(limit, int):
             limit = int(limit)
@@ -240,7 +241,7 @@ class ElasticSearchDataStore(DataStoreBase):
         data.reverse()
         return data
 
-    def get_test_index_list(self, params=None):
+    def get_project_list(self, params=None):
         if params is None:
             params = {}
         limit = params.get("limit", 10000)
@@ -264,9 +265,9 @@ class ElasticSearchDataStore(DataStoreBase):
             offset = int(offset)
         if "offset" in params:
             del params['offset']
-        if "index" in params:
-            index = params["index"]
-            del params["index"]
+        if "project_id" in params:
+            index = params["project_id"]
+            del params["project_id"]
         else:
             index = "test-result-*"
             # raise Exception("Index is required")
@@ -346,6 +347,8 @@ class ElasticSearchDataStore(DataStoreBase):
             case_bugs_mapping = self.get_case_bugs_mapping(index)
             if case_bugs_mapping:
                 for item in data:
+                    item['project_id'] = item['index']
+                    del item['index']
                     case_id = item['case_id']
                     if case_id in case_bugs_mapping:
                         item['bugs'] = case_bugs_mapping[case_id]
@@ -355,7 +358,7 @@ class ElasticSearchDataStore(DataStoreBase):
         updated = 0
         assert isinstance(items, list)
         for i, d in enumerate(items):
-            if d.get('case_id') and d.get('testrun_id') and d.get("index"):
+            if d.get('case_id') and d.get('testrun_id') and d.get("project_id"):
                 # update comment in test-results index
                 query = {
                     'testrun_id': d.get('testrun_id'),
@@ -365,11 +368,11 @@ class ElasticSearchDataStore(DataStoreBase):
                 if 'comment' in d:
                     update['comment'] = d.get('comment')
                 if update:
-                    self.es.update_es_by_query(d.get("index"), query, update)
+                    self.es.update_es_by_query(d.get("project_id"), query, update)
 
                 # update bugs in case bugs mapping index
                 if 'bugs' in d:
-                    mapping_index = self.get_case_bugs_mapping_index(d.get("index"))
+                    mapping_index = self.get_case_bugs_mapping_index(d.get("project_id"))
                     data = {
                             "case_id": d.get('case_id'),
                             "bugs": d.get('bugs')
@@ -401,7 +404,7 @@ DataStore = ElasticSearchDataStore
 
 if __name__ == '__main__':
     ds = ElasticSearchDataStore()
-    # indexes = ds.get_test_index_list()
+    # indexes = ds.get_project_list()
     # pprint(indexes)
     # pprint(ds.get_testrun_list_id_only())
     # pprint(ds.get_testrun_list({"id_only": "true"}))

@@ -7,22 +7,25 @@ def check_post_result_fields(func):
             results = [results]
         required_fields = ['testrun_id', 'case_id', 'case_result']
         optional_fields = ['case_tags', 'traceback', 'case_comment', 'suite_name', 'env', 'call_type', 'bugs']
-        index_fields = ['index', 'project', 'content-category']
+        project_id_fields = ['project_id', 'index', 'project', 'content-category']
         for result in results:
             for f in required_fields:
                 assert f in result, f"field {f} is required"
-            index = None
-            if 'index' in result:
+            project_id = None
+            if 'project_id' in result:
                 pass
-            elif 'project' in result:
-                index = f"{self.test_result_prefix}{result['project']}"
-                result['index'] = index
+            elif 'index' in result:  # index is project_id
+                result['project_id'] = result['index']
+                del result['index']
+            elif 'project' in result:  # project name should add prefix as project_id
+                project_id = f"{self.test_result_prefix}{result['project']}"
+                result['project_id'] = project_id
                 del result['project']
-            elif 'content-category' in result:
-                index = f"{self.test_result_prefix}{result['content-category']}"
-                result['index'] = index
+            elif 'content-category' in result:  # content-category should add prefix as project_id
+                project_id = f"{self.test_result_prefix}{result['content-category']}"
+                result['project_id'] = project_id
                 del result['content-category']
-            assert 'index' in result, f"No index or content-category or project field in result {result}"
+            assert 'project_id' in result, f"No project_id or content-category or project field in result {result}"
             assert result['case_result'] in ['failure', 'success', 'error', 'skip'], \
                 f"case_result must be in ['failure','success','error','skip'] but it is {result['case_result']}"
         return func(self, results)
@@ -35,7 +38,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_testrun_list(self, params=None):
         """
-        /api/testruns?index=test-result-demo&id_only=true
+        /api/projects/project_id/testruns?id_only=true
         response:
         {
             "data": [
@@ -46,7 +49,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
             ]
         }
         or
-        /api/testruns?index=test-result-demo&id_only=false&limit=10
+        /api/projects/project_id/testruns?id_only=false&limit=10
         {
             "data": [
                 {
@@ -60,7 +63,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
             ]
         }
         or
-        /api/testruns?index=test-result-demo&testrun_id=123
+        /api/projects/project_id/testruns?testrun_id=123
         {
             "data": [
                 {
@@ -77,9 +80,9 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def get_test_index_list(self, params=None):
+    def get_project_list(self, params=None):
         """
-        /api/test_index
+        /api/projects
         response:
         {
             "data": [
@@ -94,7 +97,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def search_results(self, params=None):
         """
-            /api/test_result?index=test-result-demo&testrun_id=2019-11-19+10:27:26&keyword=error
+            /api/projects/project_id/test_result?testrun_id=2019-11-19+10:27:26&keyword=error
             response:
             {
                 "data": [
@@ -104,7 +107,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
                         case_result: "failure"
                         comment: "None"
                         doc_id: "hyqVtW8B-V0jBDzk7Pyn"
-                        index: "test-result-demo"
+                        project_id: "test-result-demo"
                         testrun_id: "2020-01-18-06-18-43"
                     }
                 ]
@@ -116,12 +119,12 @@ class DataStoreBase(metaclass=abc.ABCMeta):
     def update_results(self, items):
         """
             request:
-            /api/test_result
+            /api/projects/project_id/test_results
             {
                 "case_id": "TestDataProv#test01_data_prov_prov#22#2019-08-05-15_49_03",
                 "case_result": "error",
                 "doc_id": "V957gW4B6JSdAO9QIOkU",
-                "index": "test-result-demo",
+                "project_id": "test-result-demo",
                 "testrun_id": "2019-11-19 10:27:26",
                 "comment": "111111"
             }
@@ -138,7 +141,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
             /api/summary
             response:
             {
-                "index_count": 3,
+                "project_count": 3,
                 "testrun_count": 160,
                 "total": 1970
             }
@@ -180,16 +183,16 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         """
         pass
 
-    def get_diff_from_testrun(self, index: str, testruns: list):
-        def load_testrun_result(index, testrun_id):
+    def get_diff_from_testrun(self, project_id: str, testruns: list):
+        def load_testrun_result(project_id, testrun_id):
             testrun_result = {}
-            results_error, page_info = self.search_results({"index": index,
+            results_error, page_info = self.search_results({"project_id": project_id,
                                                   "testrun_id": testrun_id,
                                                   "case_result": 'error',
                                                   "limit": 5000})
             for res in results_error:
                 testrun_result[res['case_id']] = res
-            results_failure, page_info = self.search_results({"index": index,
+            results_failure, page_info = self.search_results({"project_id": project_id,
                                                     "testrun_id": testrun_id,
                                                     "case_result": 'failure',
                                                     "limit": 5000})
@@ -200,7 +203,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         testrun_results = []
         id_all = set()
         for tr_id in testruns:
-            tr_result = load_testrun_result(index, tr_id)
+            tr_result = load_testrun_result(project_id, tr_id)
             testrun_results.append(tr_result)
             id_all.update(set(tr_result.keys()))
 
