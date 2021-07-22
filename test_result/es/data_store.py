@@ -30,6 +30,7 @@ class ElasticSearchOperation:
         for i in all_indexes:
             if str(i).startswith(prefix):
                 res.append(str(i))
+        res.sort()
         return res
 
     def index(self, **kwargs):
@@ -210,6 +211,7 @@ class ElasticSearchDataStore(DataStoreBase):
             .metric('case_results', 'terms', field="case_result.keyword") \
             .metric('suite_name', 'terms', field="suite_name.keyword") \
             .metric('env', 'terms', field="env.keyword")
+
         es_data = self.es.common_search(
             search_obj=search_obj,
             index=index,
@@ -233,12 +235,13 @@ class ElasticSearchDataStore(DataStoreBase):
             for status in testrun['case_results']['buckets']:
                 item[status['key']] = status['doc_count']
             if item.get('success') and item.get('case_count'):
-                item['success_rate'] = int(float(item['success']) / item['case_count'] * 1000)/10
+                rate = float(item.get('success', 0)) / (item['case_count']-item.get('skip', 0))
+                item['success_rate'] = int(rate * 1000)/10
             else:
                 item['success_rate'] = 0
             data.append(item)
         # data.sort(key=lambda i: i['testrun_id'])
-        data.reverse()
+        # data.reverse()
         return data
 
     def get_project_list(self, params=None):
