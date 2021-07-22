@@ -186,35 +186,36 @@ class DataStoreBase(metaclass=abc.ABCMeta):
     def get_diff_from_testrun(self, project_id: str, testruns: list):
         def load_testrun_result(project_id, testrun_id):
             testrun_result = {}
-            results_error, page_info = self.search_results({"project_id": project_id,
-                                                  "testrun_id": testrun_id,
-                                                  "case_result": 'error',
-                                                  "limit": 5000})
-            for res in results_error:
+            error_failure_id_set = set()
+            results_all, page_info = self.search_results({"project_id": project_id,
+                                                              "testrun_id": testrun_id,
+                                                              # "case_result": 'skip',
+                                                              "limit": 5000})
+            for res in results_all:
                 testrun_result[res['case_id']] = res
-            results_failure, page_info = self.search_results({"project_id": project_id,
-                                                    "testrun_id": testrun_id,
-                                                    "case_result": 'failure',
-                                                    "limit": 5000})
-            for res in results_failure:
-                testrun_result[res['case_id']] = res
-            return testrun_result
+                if res['case_result'] in ['error', 'failure']:
+                    error_failure_id_set.add(res['case_id'])
+            print("error_failure_id_set")
+            print(error_failure_id_set)
+            return testrun_result, error_failure_id_set
 
         testrun_results = []
-        id_all = set()
+        error_failure_id_all = set()
         for tr_id in testruns:
-            tr_result = load_testrun_result(project_id, tr_id)
+            tr_result, error_failure_id_set = load_testrun_result(project_id, tr_id)  # get all cases and error+failure cases of every testrun
             testrun_results.append(tr_result)
-            id_all.update(set(tr_result.keys()))
+            error_failure_id_all = error_failure_id_all.union(error_failure_id_set)  # get all case id
 
         diff = []
-        for case_id in id_all:
+        error_failure_id_all = list(error_failure_id_all)
+        error_failure_id_all.sort()
+        for case_id in error_failure_id_all:  # for every case id
             t = {"case_id": case_id, "results": []}
-            for i, tr_result in enumerate(testrun_results):
+            for i, tr_result in enumerate(testrun_results):  # for every testrun, fill the case result
+                case_result = ""
                 if case_id in tr_result:
-                    t['results'].append({'testrun_id': testruns[i], "result": tr_result[case_id]['case_result']})
-                else:
-                    t['results'].append({'testrun_id': testruns[i], "result": "success"})
+                    case_result = tr_result[case_id]['case_result']
+                t['results'].append({'testrun_id': testruns[i], "result": case_result})
             diff.append(t)
 
         return diff

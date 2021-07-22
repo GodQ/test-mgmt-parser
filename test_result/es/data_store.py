@@ -178,10 +178,17 @@ class ElasticSearchDataStore(DataStoreBase):
         limit = params.get("limit", 1000)
         if not isinstance(limit, int):
             limit = int(limit)
+        env = params.get("env", '')
+        suite = params.get("suite", '')
+
         query_body = {
             "collapse": {"field": "testrun_id.keyword"}
         }
         search_obj = Search.from_dict(query_body)
+        if env and env != "all":
+            search_obj = search_obj.query("match_phrase", env=env)
+        if suite and suite != "all":
+            search_obj = search_obj.query("match_phrase", suite_name=suite)
         search_obj = search_obj.source(['testrun_id']).sort({"testrun_id.keyword": {"order": "desc"}})
         data = self.es.common_search(
             search_obj=search_obj,
@@ -202,11 +209,17 @@ class ElasticSearchDataStore(DataStoreBase):
         if not isinstance(limit, int):
             limit = int(limit)
         testrun_id = params.get("testrun_id", None)
+        env = params.get("env", '')
+        suite = params.get("suite", '')
 
         search_obj = Search()
         if testrun_id:
             # search_obj = search_obj.filter("term", testrun_id=testrun_id)
             search_obj = search_obj.query("match_phrase", testrun_id=testrun_id)
+        if env and env != "all":
+            search_obj = search_obj.query("match_phrase", env=env)
+        if suite and suite != "all":
+            search_obj = search_obj.query("match_phrase", suite_name=suite)
         search_obj.aggs.bucket('testruns', 'terms', field='testrun_id.keyword', size=limit, order={"_term": "desc"})\
             .metric('case_results', 'terms', field="case_result.keyword") \
             .metric('suite_name', 'terms', field="suite_name.keyword") \
@@ -220,7 +233,7 @@ class ElasticSearchDataStore(DataStoreBase):
         )
         # pprint(len(es_data.hits.hits))
         if not es_data:
-            return {}
+            return []
         data = list()
         for testrun in es_data.aggregations.testruns.buckets:
             # print(testrun['env'].buckets)
