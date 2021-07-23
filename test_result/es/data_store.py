@@ -109,6 +109,7 @@ class ElasticSearchOperation:
 class ElasticSearchDataStore(DataStoreBase):
     es = ElasticSearchOperation()
     test_result_index = "{}*".format(DataStoreBase.test_result_prefix)
+    projects_index = "projects"
     search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
 
     def get_case_bugs_mapping_index(self, index):
@@ -116,6 +117,25 @@ class ElasticSearchDataStore(DataStoreBase):
         project = index.replace(self.test_result_prefix, "", 1)
         mapping_index = project.strip() + "_case_bugs"
         return mapping_index
+
+    def create_project(self, params):
+        project_id = params.get('project_id')
+        assert project_id
+        projects = self.get_project_list({"id_only": 'true'})
+        print('aaa:', projects)
+        if project_id in projects:
+            return 409, f"Project ID '{project_id}' has existed"
+
+        doc = {
+            "project_id": project_id,
+            "created_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
+        }
+        ret = self.es.index(index=self.projects_index, body=doc)
+        result = ret['result']
+        if result == 'created':
+            return 201, 'created'
+        else:
+            return 400, ret
 
     def insert_results(self, results):
         if not isinstance(results, list):
@@ -166,10 +186,13 @@ class ElasticSearchDataStore(DataStoreBase):
         if "testrun_id" in params and params['testrun_id']:
             id_only = "false"
         id_only = id_only.lower()
-        if id_only != "true":
-            return self.get_testrun_list_details(params)
-        else:
-            return self.get_testrun_list_id_only(params)
+        try:
+            if id_only != "true":
+                return self.get_testrun_list_details(params)
+            else:
+                return self.get_testrun_list_id_only(params)
+        except elasticsearch.exceptions.NotFoundError as e:
+            return []
 
     def get_testrun_list_id_only(self, params=None):
         if params is None:
@@ -263,10 +286,23 @@ class ElasticSearchDataStore(DataStoreBase):
         limit = params.get("limit", 10000)
         if not isinstance(limit, int):
             limit = int(limit)
+        id_only = params.get("id_only", 'false')
 
-        data = self.es.get_index_list(prefix=DataStoreBase.test_result_prefix)
-        data = data[:limit]
-        return data
+        # data = self.es.get_index_list(prefix=DataStoreBase.test_result_prefix)
+        search_obj = Search()
+        try:
+            data = self.es.common_search(
+                search_obj=search_obj,
+                index=self.projects_index,
+                limit=limit
+            )
+            print(data)
+        except elasticsearch.exceptions.NotFoundError as e:
+            data = []
+        if id_only == 'true':
+            return [i['project_id'] for i in data]
+        else:
+            return data
 
     def search_results(self, params=None):
         if params is None:
@@ -420,12 +456,14 @@ DataStore = ElasticSearchDataStore
 
 if __name__ == '__main__':
     ds = ElasticSearchDataStore()
-    # indexes = ds.get_project_list()
-    # pprint(indexes)
+    # r = ds.create_project({'project_id': 'aaa'})
+    # pprint(r)
+    indexes = ds.get_project_list()
+    pprint(indexes)
     # pprint(ds.get_testrun_list_id_only())
     # pprint(ds.get_testrun_list({"id_only": "true"}))
     # pprint(ds.get_testrun_list({"id_only": "false"}))
     # pprint(ds.get_case_bugs_mapping(indexes[0]))
     # pprint(ds.get_summary())
     # pprint(ds.get_testrun_list_details({"limit":3}))
-    pprint(ds.search_results({'limit': 2}))
+    # pprint(ds.search_results({'limit': 2}))

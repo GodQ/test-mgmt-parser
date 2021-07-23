@@ -95,6 +95,20 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
+    def create_project(self, params=None):
+        """
+        POST /api/projects
+        {
+            "project_id": "aaa"
+        }
+        response:
+        {
+            "project_id": "aaa"
+        }
+        """
+        pass
+
+    @abc.abstractmethod
     def search_results(self, params=None):
         """
             /api/projects/project_id/test_result?testrun_id=2019-11-19+10:27:26&keyword=error
