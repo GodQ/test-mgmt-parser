@@ -182,7 +182,7 @@ def post_test_result_with_project_id(project_id):
             body_json = [body_json]
 
         for i in body_json:
-            i['project'] = project_id
+            i['project_id'] = project_id
 
         try:
             updated = ds.batch_insert_results(body_json)
