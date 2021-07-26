@@ -41,8 +41,7 @@ def test_project_list():
 @auth.login_required
 def testrun_list(project_id):
     args = request.args.to_dict()
-    args['project_id'] = project_id
-    testruns = ds.get_testrun_list(args)
+    testruns = ds.get_testrun_list(project_id, args)
     resp = {
         "data": testruns
     }
@@ -68,7 +67,7 @@ def get_test_result(project_id):
         if 'offset' not in params:
             params['offset'] = 0
         try:
-            data, page_info = ds.search_results(params)
+            data, page_info = ds.search_results(project_id, params)
             resp = {
                 "data": data,
                 "page_info": page_info
@@ -106,14 +105,10 @@ def update_test_result(project_id):
             items = [body_json]
         for i in items:
             i['project_id'] = project_id
-        updated = ds.update_results(items)
+        status, info = ds.update_results(project_id, items)
         resp = {
-            "updated": updated
+            "info": info
         }
-        if updated == 0:
-            status = 404
-        else:
-            status = 201
         return jsonify(resp), status
 
 
@@ -150,7 +145,7 @@ def create_project():
 
 @bp.route('/projects/<string:project_id>/test_results', methods=['POST'])
 @auth.login_required(role=['admin', 'developer'])
-def post_test_result_with_project_id(project_id):
+def post_test_results(project_id):
     print(request)
     print(request.args)
     print(request.data)
@@ -175,14 +170,10 @@ def post_test_result_with_project_id(project_id):
             i['project_id'] = project_id
 
         try:
-            updated = ds.batch_insert_results(body_json)
+            status, info = ds.batch_insert_results(project_id, body_json)
             resp = {
-                "updated": updated
+                "info": info
             }
-            if updated == 0:
-                status = 404
-            else:
-                status = 201
         except Exception as e:
             error_msg = str(e)
             resp = {
@@ -213,11 +204,11 @@ def diff_test_result(project_id):
         if "testruns" not in params:
             abort(make_response(jsonify(error="testruns must be set"), 400))
         testruns = params['testruns'].split(',')
-        diff = ds.get_diff_from_testrun(params['project_id'], testruns)
+        diff = ds.get_diff_from_testrun(project_id, testruns)
         testrun_summary = []
         for tr_id in testruns:
             tr_info = ds.get_testrun_list(
-                {"project_id": params['project_id'], "testrun_id": tr_id}
+                project_id, {"testrun_id": tr_id, "id_only": 'false'}
             )
             if len(tr_info) > 0:
                 testrun_summary.append(tr_info[0])

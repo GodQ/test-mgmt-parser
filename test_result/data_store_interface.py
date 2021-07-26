@@ -1,4 +1,5 @@
 import abc
+import time
 
 
 def check_post_result_fields(func):
@@ -29,14 +30,50 @@ def check_post_result_fields(func):
             assert result['case_result'] in ['failure', 'success', 'error', 'skip'], \
                 f"case_result must be in ['failure','success','error','skip'] but it is {result['case_result']}"
         return func(self, results)
+
     return func_t
+
+
+class ProjectsCache:
+    projects_cache = dict()  # project_id => expire time
+    EXPIRE_TIME = 60  # cache item expire after 60s
+
+    @classmethod
+    def hit(cls, project_id):
+        if project_id not in cls.projects_cache:  # not match
+            return False
+        elif cls.projects_cache[project_id] < time.time():  # match but expire
+            del cls.projects_cache[project_id]
+            return False
+        else:  # hit, refresh expire time
+            cls.projects_cache[project_id] = time.time() + cls.EXPIRE_TIME
+            return True
+
+    @classmethod
+    def add(cls, project_id):
+        cls.projects_cache[project_id] = time.time() + cls.EXPIRE_TIME
+
+    @classmethod
+    def refresh(cls, projects):
+        expire_time = time.time() + cls.EXPIRE_TIME
+        for p in projects:
+            cls.projects_cache[p] = expire_time
+
+
+def check_project_exist(data_store, project_id):
+    ret = ProjectsCache.hit(project_id)
+    if ret:
+        return True
+    projects = data_store.get_project_list({"id_only": 'true'})
+    ProjectsCache.refresh(projects)
+    return ProjectsCache.hit(project_id)
 
 
 class DataStoreBase(metaclass=abc.ABCMeta):
     test_result_prefix = "test-result-"
 
     @abc.abstractmethod
-    def get_testrun_list(self, params=None):
+    def get_testrun_list(self, project_id, params=None):
         """
         /api/projects/project_id/testruns?id_only=true
         response:
@@ -95,7 +132,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def create_project(self, params=None):
+    def create_project(self, params):
         """
         POST /api/projects
         {
@@ -109,7 +146,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def search_results(self, params=None):
+    def search_results(self, project_id, params=None):
         """
             /api/projects/project_id/test_result?testrun_id=2019-11-19+10:27:26&keyword=error
             response:
@@ -130,7 +167,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def update_results(self, items):
+    def update_results(self, project_id, items):
         """
             request:
             /api/projects/project_id/test_results
@@ -162,22 +199,27 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         """
         pass
 
-    @check_post_result_fields
-    def batch_insert_results(self, results):
+    # @check_post_result_fields
+    def batch_insert_results(self, project_id, results):
+        assert project_id
+        exist = check_project_exist(self, project_id)
+        if not exist:
+            return 404, f"Project ID '{project_id}' does not exist"
+
         count = 0
         for result in results:
             try:
-                self.insert_results(result)
+                self.insert_result(project_id, result)
                 count += 1
             except Exception as e:
                 print(e)
-        return count
+        return 201, {'updated': count}
 
     @abc.abstractmethod
-    def insert_results(self, results):
+    def insert_result(self, project_id, result):
         """
-        results:
-        [{
+        result:
+        {
             "case_comment": "",
             "testrun_id": "2020-09-30-06-19-20",
             "method_name": "test_pa_get_top-app-usage_7",
@@ -193,7 +235,7 @@ class DataStoreBase(metaclass=abc.ABCMeta):
             "case_tags": ["P2"],
             "class_name": "system.statistics.app",
             "traceback": ""
-        }]
+        }
         """
         pass
 
@@ -201,10 +243,11 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         def load_testrun_result(project_id, testrun_id):
             testrun_result = {}
             error_failure_id_set = set()
-            results_all, page_info = self.search_results({"project_id": project_id,
-                                                              "testrun_id": testrun_id,
-                                                              # "case_result": 'skip',
-                                                              "limit": 5000})
+            params = {
+                "testrun_id": testrun_id,
+                # "case_result": 'skip',
+                "limit": 5000}
+            results_all, page_info = self.search_results(project_id, params)
             for res in results_all:
                 testrun_result[res['case_id']] = res
                 if res['case_result'] in ['error', 'failure']:
@@ -216,7 +259,8 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         testrun_results = []
         error_failure_id_all = set()
         for tr_id in testruns:
-            tr_result, error_failure_id_set = load_testrun_result(project_id, tr_id)  # get all cases and error+failure cases of every testrun
+            tr_result, error_failure_id_set = load_testrun_result(project_id,
+                                                                  tr_id)  # get all cases and error+failure cases of every testrun
             testrun_results.append(tr_result)
             error_failure_id_all = error_failure_id_all.union(error_failure_id_set)  # get all case id
 

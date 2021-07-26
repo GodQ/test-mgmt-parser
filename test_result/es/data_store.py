@@ -1,15 +1,13 @@
-from elasticsearch import Elasticsearch
-import elasticsearch
-import copy
-import sys
 import time
 from pprint import pprint
-from elasticsearch_dsl import Search
-from elasticsearch_dsl.query import MultiMatch, Match
-from elasticsearch_dsl import connections, Document, Nested, Date, Integer, Keyword, Text
-from config.config import Config
-from test_result.data_store_interface import DataStoreBase
 
+import elasticsearch
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
+from elasticsearch_dsl import connections
+
+from config.config import Config
+from test_result.data_store_interface import DataStoreBase, check_project_exist
 
 ES_HOSTS = Config.get_config('es_hosts')
 # Define a default Elasticsearch client
@@ -24,13 +22,20 @@ class ElasticSearchOperation:
     def search(self, **kwargs):
         return self.es.search(**kwargs)
 
-    def get_index_list(self, prefix=''):
-        all_indexes = self.es.indices.get_alias().keys()
-        res = []
-        for i in all_indexes:
-            if str(i).startswith(prefix):
-                res.append(str(i))
-        res.sort()
+    def get_indices_stat(self, indices_set, data_type='list'):
+        all_indexes = self.es.cat.indices('*', format='json')
+        res = None
+        if data_type == 'list':
+            res = []
+            for i in all_indexes:
+                if i['index'] in indices_set:
+                    res.append(i)
+            res.sort(key=lambda x: x['index'])
+        elif data_type == 'dict':
+            res = {}
+            for i in all_indexes:
+                if i['index'] in indices_set:
+                    res[i['index']] = i
         return res
 
     def index(self, **kwargs):
@@ -46,7 +51,7 @@ class ElasticSearchOperation:
             limit = kwargs.get('limit')
         else:
             limit = 100
-        search_obj = search_obj[offset: offset+limit]
+        search_obj = search_obj[offset: offset + limit]
         if kwargs.get('index'):
             index = kwargs.get('index')
             search_obj = search_obj.index(index)
@@ -121,9 +126,8 @@ class ElasticSearchDataStore(DataStoreBase):
     def create_project(self, params):
         project_id = params.get('project_id')
         assert project_id
-        projects = self.get_project_list({"id_only": 'true'})
-        print('aaa:', projects)
-        if project_id in projects:
+        exist = check_project_exist(self, project_id)
+        if exist:
             return 409, f"Project ID '{project_id}' has existed"
 
         doc = {
@@ -137,24 +141,48 @@ class ElasticSearchDataStore(DataStoreBase):
         else:
             return 400, ret
 
-    def insert_results(self, results):
-        if not isinstance(results, list):
-            results = [results]
-        count = 0
-        for r in results:
-            index = r.get('project_id')
-            if not index:
-                print(f"No index or project_id or content-category or project field in result {r}")
-                continue
-            if not index.startswith(self.test_result_prefix):
-                index = f"{self.test_result_prefix}{index}"
-            if "timestamp" not in r:
-                r['@timestamp'] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time()))
-            if "created_time" not in r:
-                r['created_time'] = r['@timestamp']
-            self.es.index(index=index, body=r)
-            count += 1
-        return count
+    def get_project_list(self, params=None):
+        if params is None:
+            params = {}
+        limit = params.get("limit", 10000)
+        if not isinstance(limit, int):
+            limit = int(limit)
+        id_only = params.get("id_only", 'false')
+
+        # data = self.es.get_index_list(prefix=DataStoreBase.test_result_prefix)
+        search_obj = Search()
+        try:
+            data = self.es.common_search(
+                search_obj=search_obj,
+                index=self.projects_index,
+                limit=limit
+            )
+            print(data)
+        except elasticsearch.exceptions.NotFoundError as e:
+            data = []
+        index_ids = [i['project_id'] for i in data]
+        if id_only == 'true':
+            return index_ids
+        else:
+            indices_info = self.es.get_indices_stat(indices_set=index_ids, data_type='dict')
+            res = []
+            print(data)
+            for project in data:
+                i = indices_info.get(project['project_id'])
+                t = {
+                    "test_result_count": i['docs.count'],
+                    "store_size": i['store.size'],
+                    **project
+                }
+                res.append(t)
+            return res
+
+    def insert_result(self, project_id, r):
+        if "timestamp" not in r:
+            r['@timestamp'] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time()))
+        if "created_time" not in r:
+            r['created_time'] = r['@timestamp']
+        self.es.index(index=project_id, body=r)
 
     def get_summary(self):
         data = dict()
@@ -179,25 +207,28 @@ class ElasticSearchDataStore(DataStoreBase):
 
         return data
 
-    def get_testrun_list(self, params=None):
-        if params is None:
-            params = {}
+    def get_testrun_list(self, project_id, params=None):
+        assert project_id
+        exist = check_project_exist(self, project_id)
+        if not exist:
+            return 404, f"Project ID '{project_id}' does not exist"
+
         id_only = params.get("id_only", "true")
         if "testrun_id" in params and params['testrun_id']:
             id_only = "false"
         id_only = id_only.lower()
         try:
             if id_only != "true":
-                return self.get_testrun_list_details(params)
+                return self.get_testrun_list_details(project_id, params)
             else:
-                return self.get_testrun_list_id_only(params)
+                return self.get_testrun_list_id_only(project_id, params)
         except elasticsearch.exceptions.NotFoundError as e:
             return []
 
-    def get_testrun_list_id_only(self, params=None):
+    def get_testrun_list_id_only(self, project_id, params=None):
         if params is None:
             params = {}
-        index = params.get("project_id", self.test_result_index)
+        index = project_id
         limit = params.get("limit", 1000)
         if not isinstance(limit, int):
             limit = int(limit)
@@ -224,10 +255,10 @@ class ElasticSearchDataStore(DataStoreBase):
                 d.append(i)
         return d
 
-    def get_testrun_list_details(self, params=None):
+    def get_testrun_list_details(self, project_id, params=None):
         if params is None:
             params = {}
-        index = params.get("project_id", self.test_result_index)
+        index = project_id
         limit = params.get("limit", 10)
         if not isinstance(limit, int):
             limit = int(limit)
@@ -243,7 +274,7 @@ class ElasticSearchDataStore(DataStoreBase):
             search_obj = search_obj.query("match_phrase", env=env)
         if suite and suite != "all":
             search_obj = search_obj.query("match_phrase", suite_name=suite)
-        search_obj.aggs.bucket('testruns', 'terms', field='testrun_id.keyword', size=limit, order={"_term": "desc"})\
+        search_obj.aggs.bucket('testruns', 'terms', field='testrun_id.keyword', size=limit, order={"_term": "desc"}) \
             .metric('case_results', 'terms', field="case_result.keyword") \
             .metric('suite_name', 'terms', field="suite_name.keyword") \
             .metric('env', 'terms', field="env.keyword")
@@ -271,8 +302,8 @@ class ElasticSearchDataStore(DataStoreBase):
             for status in testrun['case_results']['buckets']:
                 item[status['key']] = status['doc_count']
             if item.get('success') and item.get('case_count'):
-                rate = float(item.get('success', 0)) / (item['case_count']-item.get('skip', 0))
-                item['success_rate'] = int(rate * 1000)/10
+                rate = float(item.get('success', 0)) / (item['case_count'] - item.get('skip', 0))
+                item['success_rate'] = int(rate * 1000) / 10
             else:
                 item['success_rate'] = 0
             data.append(item)
@@ -280,33 +311,13 @@ class ElasticSearchDataStore(DataStoreBase):
         # data.reverse()
         return data
 
-    def get_project_list(self, params=None):
-        if params is None:
-            params = {}
-        limit = params.get("limit", 10000)
-        if not isinstance(limit, int):
-            limit = int(limit)
-        id_only = params.get("id_only", 'false')
+    def search_results(self, project_id, params=None):
+        assert project_id
+        exist = check_project_exist(self, project_id)
+        if not exist:
+            return 404, f"Project ID '{project_id}' does not exist"
+        index = project_id
 
-        # data = self.es.get_index_list(prefix=DataStoreBase.test_result_prefix)
-        search_obj = Search()
-        try:
-            data = self.es.common_search(
-                search_obj=search_obj,
-                index=self.projects_index,
-                limit=limit
-            )
-            print(data)
-        except elasticsearch.exceptions.NotFoundError as e:
-            data = []
-        if id_only == 'true':
-            return [i['project_id'] for i in data]
-        else:
-            return data
-
-    def search_results(self, params=None):
-        if params is None:
-            params = {}
         limit = params.get("limit", 10)
         if not isinstance(limit, int):
             limit = int(limit)
@@ -317,12 +328,6 @@ class ElasticSearchDataStore(DataStoreBase):
             offset = int(offset)
         if "offset" in params:
             del params['offset']
-        if "project_id" in params:
-            index = params["project_id"]
-            del params["project_id"]
-        else:
-            index = "test-result-*"
-            # raise Exception("Index is required")
         details_flag = params.get('details')
         if details_flag is True or isinstance(details_flag, str) and details_flag.lower() == 'true':
             del params['details']
@@ -406,11 +411,16 @@ class ElasticSearchDataStore(DataStoreBase):
                         item['bugs'] = case_bugs_mapping[case_id]
         return data, page_info
 
-    def update_results(self, items):
+    def update_results(self, project_id, items):
+        assert project_id
+        exist = check_project_exist(self, project_id)
+        if not exist:
+            return 404, f"Project ID '{project_id}' does not exist"
+
         updated = 0
         assert isinstance(items, list)
         for i, d in enumerate(items):
-            if d.get('case_id') and d.get('testrun_id') and d.get("project_id"):
+            if d.get('case_id') and d.get('testrun_id'):
                 # update comment in test-results index
                 query = {
                     'testrun_id': d.get('testrun_id'),
@@ -420,20 +430,20 @@ class ElasticSearchDataStore(DataStoreBase):
                 if 'comment' in d:
                     update['comment'] = d.get('comment')
                 if update:
-                    self.es.update_es_by_query(d.get("project_id"), query, update)
+                    self.es.update_es_by_query(project_id, query, update)
 
                 # update bugs in case bugs mapping index
                 if 'bugs' in d:
-                    mapping_index = self.get_case_bugs_mapping_index(d.get("project_id"))
+                    mapping_index = self.get_case_bugs_mapping_index(project_id)
                     data = {
-                            "case_id": d.get('case_id'),
-                            "bugs": d.get('bugs')
+                        "case_id": d.get('case_id'),
+                        "bugs": d.get('bugs')
                     }
                     ret = self.es.index(index=mapping_index, body=data, id=d.get('case_id'))
                     print(ret)
 
                 updated += 1
-        return updated
+        return 200, {"updated": updated}
 
     def get_case_bugs_mapping(self, index):
         mapping_index = self.get_case_bugs_mapping_index(index)
@@ -455,11 +465,14 @@ class ElasticSearchDataStore(DataStoreBase):
 DataStore = ElasticSearchDataStore
 
 if __name__ == '__main__':
-    ds = ElasticSearchDataStore()
+    es = ElasticSearchOperation()
+    print(es.get_index_list())
+
+    # ds = ElasticSearchDataStore()
     # r = ds.create_project({'project_id': 'aaa'})
     # pprint(r)
-    indexes = ds.get_project_list()
-    pprint(indexes)
+    # indexes = ds.get_project_list()
+    # pprint(indexes)
     # pprint(ds.get_testrun_list_id_only())
     # pprint(ds.get_testrun_list({"id_only": "true"}))
     # pprint(ds.get_testrun_list({"id_only": "false"}))
