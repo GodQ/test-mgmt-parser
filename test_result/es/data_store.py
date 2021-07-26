@@ -191,15 +191,20 @@ class ElasticSearchDataStore(DataStoreBase):
             "track_total_hits": True
         }
         # es_data = self.es.search(index=self.test_result_index, body=query_body)
+        index_ids = self.get_project_list({'id_only': 'true'})
         search_obj = Search.from_dict(query_body)
+        search_obj = search_obj.query("terms", _index=index_ids)
         search_obj.aggs.bucket('project_count', 'cardinality', field='_index')
         search_obj.aggs.bucket('testrun_count', 'cardinality', field='testrun_id.keyword')
+        print(search_obj.to_dict())
         es_data = self.es.common_search(
             search_obj=search_obj,
-            index=self.test_result_index,
+            index="*",
             limit=0,
             raw_result=True
         )
+
+        print(es_data)
 
         data["total"] = es_data.hits.total.value
         data['project_count'] = es_data.aggregations.project_count.value
