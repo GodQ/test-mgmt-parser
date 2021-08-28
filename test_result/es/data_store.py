@@ -215,7 +215,7 @@ class ElasticSearchDataStore(DataStoreBase):
         print(es_data)
 
         data["total"] = es_data.hits.total.value
-        data['project_count'] = es_data.aggregations.project_count.value
+        data['project_count'] = len(index_ids)  # es_data.aggregations.project_count.value
         data['testrun_count'] = es_data.aggregations.testrun_count.value
 
         return data
