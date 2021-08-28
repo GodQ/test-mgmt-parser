@@ -48,6 +48,17 @@ def testrun_list(project_id):
     return jsonify(resp), 200
 
 
+@bp.route('/projects/<string:project_id>/settings', methods=['GET'])
+@auth.login_required
+def project_settings(project_id):
+    args = request.args.to_dict()
+    settings = ds.get_project_settings(project_id)
+    resp = {
+        "data": settings
+    }
+    return jsonify(resp), 200
+
+
 @bp.route('/projects/<string:project_id>/test_results', methods=['GET'])
 @auth.login_required
 def get_test_result(project_id):

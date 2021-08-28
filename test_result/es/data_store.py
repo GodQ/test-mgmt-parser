@@ -220,6 +220,36 @@ class ElasticSearchDataStore(DataStoreBase):
 
         return data
 
+    def get_project_settings(self, project_id):
+        assert project_id
+        exist = check_project_exist(self, project_id)
+        if not exist:
+            return 404, f"Project ID '{project_id}' does not exist"
+
+        def _search_(key):
+            query_body = {
+                "collapse": {"field": f"{key}.keyword"}
+            }
+            search_obj = Search.from_dict(query_body)
+            search_obj = search_obj.source([key]).sort({f"{key}.keyword": {"order": "asc"}})
+            data = self.es.common_search(
+                search_obj=search_obj,
+                index=project_id)
+            print(data)
+            d = list()
+            for t in data:
+                i = t.get(key)
+                if i:
+                    d.append(i)
+            return d
+        envs = _search_('env')
+        suites = _search_('suite_name')
+        res = {
+            'envs': envs,
+            'suites': suites
+        }
+        return res
+
     def get_testrun_list(self, project_id, params=None):
         assert project_id
         exist = check_project_exist(self, project_id)
@@ -479,13 +509,15 @@ DataStore = ElasticSearchDataStore
 
 if __name__ == '__main__':
     es = ElasticSearchOperation()
-    print(es.get_index_list())
+    # print(es.get_index_list())
 
-    # ds = ElasticSearchDataStore()
+    ds = ElasticSearchDataStore()
     # r = ds.create_project({'project_id': 'aaa'})
     # pprint(r)
     # indexes = ds.get_project_list()
     # pprint(indexes)
+    project_settings = ds.get_project_settings("test-result-alp-saas")
+    pprint(project_settings)
     # pprint(ds.get_testrun_list_id_only())
     # pprint(ds.get_testrun_list({"id_only": "true"}))
     # pprint(ds.get_testrun_list({"id_only": "false"}))

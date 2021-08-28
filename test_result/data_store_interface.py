@@ -132,6 +132,17 @@ class DataStoreBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
+    def get_project_settings(self, project_id):
+        """
+        GET /projects/<string:project_id>/settings
+        {
+            "envs": ['alp100', 'alp103'],
+            "suites": ["regression", "smoke"]
+        }
+        """
+        pass
+
+    @abc.abstractmethod
     def create_project(self, params):
         """
         POST /api/projects
