@@ -169,12 +169,20 @@ class ElasticSearchDataStore(DataStoreBase):
             print(data)
             for project in data:
                 i = indices_info.get(project['project_id'])
-                t = {
-                    "test_result_count": i['docs.count'],
-                    "store_size": i['store.size'],
-                    **project
-                }
-                res.append(t)
+                p = project
+                if i:
+                    t = {
+                        "test_result_count": i['docs.count'],
+                        "store_size": i['store.size'],
+                    }
+                    p.update(t)
+                else:
+                    t = {
+                        "test_result_count": 0,
+                        "store_size": 0,
+                    }
+                    p.update(t)
+                res.append(p)
             return res
 
     def insert_result(self, project_id, r):
