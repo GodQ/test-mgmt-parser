@@ -1,7 +1,10 @@
 flask
+flask_sqlalchemy
 flask-HTTPAuth
 elasticsearch
 elasticsearch_dsl
 pyyaml
 passlib
 itsdangerous
+# pymongo
+# mongoengine

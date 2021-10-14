@@ -1,6 +1,7 @@
 from uuid import uuid4
 import json
 from config.config import Config
+from app_init import db
 
 from elasticsearch_dsl import Document, Keyword, Text
 from passlib.apps import custom_app_context as pwd_context
@@ -10,18 +11,23 @@ default_role = 'developer'
 role_set = ['admin', 'developer', 'viewer']
 
 
-class User(Document):
-    id = Keyword()
-    user_name = Text()
-    password_hash = Text()
-    role = Text()
+class User(db.Model):
+    id = db.Column(db.Integer, unique=True)
+    user_name = db.Column(db.String(80), primary_key=True)
+    password_hash = db.Column(db.String(800))
+    role = db.Column(db.String(80))
 
-    class Index:
-        name = 'users'
-
-    def __init__(self, meta=None, **kwargs):
-        super(User, self).__init__(meta, **kwargs)
+    def __init__(self, user_name):
+        self.user_name = user_name
         self.set_role(default_role)
+
+    def to_dict(self):
+        t = {
+            'id': self.id,
+            'user_name': self.user_name,
+            'role': self.role,
+        }
+        return t
 
     def set_user_id(self, user_id=None):
         if user_id:
@@ -49,8 +55,12 @@ class DuplicatedUserName(Exception):
     pass
 
 
+class NotExistUserName(Exception):
+    pass
+
+
 def list_users():
-    users = User.search().execute().hits
+    users = User.query.all()
     ret = list()
     for user in users:
         d = user.to_dict()
@@ -62,40 +72,31 @@ def list_users():
 def add_user(user_name, password, role=None):
     if not user_name:
         raise BadRequest('No user_name!!')
-    search_result = User.search().filter('term', user_name=user_name).execute()
-    if search_result.hits.total.value > 0:
+    search_result = User.query.filter_by(user_name=user_name).first()
+    if search_result:
         raise DuplicatedUserName(f'Duplicated user name "{user_name}"')
     user = User(user_name=user_name)
     user.set_user_id(user_name)
     user.set_role(role)
     user.hash_password(password)
-    user.save()
+    db.session.add(user)
+    db.session.commit()
     return user
+
+
+def delete_user(user_name):
+    if not user_name:
+        raise BadRequest('No user_name!!')
+    search_result = User.query.filter_by(user_name=user_name).delete()
+    db.session.commit()
+    return search_result
 
 
 def load_user_by_name(user_name):
     if not user_name:
         raise BadRequest('No user_name!!')
-    users = User.search().filter('term', user_name=user_name).execute().hits
-    if len(users) == 0:
+    user = User.query.filter_by(user_name=user_name).first()
+    if not user:
         raise BadRequest(f'There is no user named "{user_name}"')
-    if len(users) > 1:
-        raise BadRequest(f'There are too many users named "{user_name}"')
-    user = users[0]
     return user
 
-
-def init_users():
-    User.init()
-    users = Config.get_config('users')
-    for user in users:
-        user_name = user.get('name', 'user')
-        user_password = user.get('password', 'password')
-        user_role = user.get('role', 'developer')
-        try:
-            add_user(user_name, user_password, user_role)
-        except DuplicatedUserName as e:
-            print(f"User name {user_name} has existed")
-
-
-# init_user_index()

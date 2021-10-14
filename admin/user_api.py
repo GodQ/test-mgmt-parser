@@ -3,7 +3,7 @@ from flask import jsonify, request, make_response, abort, g
 import json
 import traceback
 
-from common.user_model import User, add_user, list_users, load_user_by_name
+from common.user_model import User, add_user, list_users, load_user_by_name, delete_user
 from auth.auth import auth
 
 # curl -v -X POST 127.0.0.1:5000/api/token -u root:password
@@ -37,13 +37,12 @@ def get_all_users():
 
 @bp.route('/users/<user_name>', methods=['DELETE'])
 @auth.login_required(role='admin')
-def delete_user(user_name):
+def delete_user_api(user_name):
     if user_name == 'admin':
         abort(make_response(jsonify(error="User admin can not be deleted"), 403))
     try:
-        user = load_user_by_name(user_name=user_name)
-        user.delete()
-        return {'status': 'Deleted', 'user_name': user.user_name, 'id': user.id, 'role': user.role}
+        delete_user(user_name)
+        return {'status': 'Deleted'}
     except Exception as e:
         msg = str(e)
         abort(make_response(jsonify(error=msg), 400))
