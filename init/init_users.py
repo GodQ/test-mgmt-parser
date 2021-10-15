@@ -1,6 +1,7 @@
 
-from common.user_model import *
+from models.user_model import *
 from app_init import db
+from config.config import Config
 
 
 def init_users():

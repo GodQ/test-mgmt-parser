@@ -3,14 +3,14 @@ import traceback
 from flask import jsonify, request, make_response, abort
 
 from auth.auth import auth
-from test_result.data_store import DataStore
+from test_result.data_mgmt import DataMgmt
 from . import bp
 
 # from .es.data_store import DataStore
 # from .mock.mock_data_store import DataStore
 # from .sql.sql_data_store import DataStore
 
-ds = DataStore()
+dm = DataMgmt()
 
 
 @bp.route('/')
@@ -21,7 +21,7 @@ def index():
 @bp.route('/summary', methods=['GET'])
 @auth.login_required
 def summary():
-    summary = ds.get_summary()
+    summary = dm.get_summary()
     print(summary)
     return jsonify(summary), 200
 
@@ -30,7 +30,7 @@ def summary():
 @auth.login_required
 def test_project_list():
     args = request.args
-    testruns = ds.get_project_list(args)
+    testruns = dm.get_project_list(args)
     resp = {
         "data": testruns
     }
@@ -41,7 +41,7 @@ def test_project_list():
 @auth.login_required
 def testrun_list(project_id):
     args = request.args.to_dict()
-    testruns = ds.get_testrun_list(project_id, args)
+    testruns = dm.get_testrun_list(project_id, args)
     resp = {
         "data": testruns
     }
@@ -52,7 +52,7 @@ def testrun_list(project_id):
 @auth.login_required
 def project_settings(project_id):
     args = request.args.to_dict()
-    settings = ds.get_project_settings(project_id)
+    settings = dm.get_project_settings(project_id)
     resp = {
         "data": settings
     }
@@ -78,7 +78,7 @@ def get_test_result(project_id):
         if 'offset' not in params:
             params['offset'] = 0
         try:
-            data, page_info = ds.search_results(project_id, params)
+            data, page_info = dm.search_results(project_id, params)
             resp = {
                 "data": data,
                 "page_info": page_info
@@ -116,7 +116,7 @@ def update_test_result(project_id):
             items = [body_json]
         for i in items:
             i['project_id'] = project_id
-        status, info = ds.update_results(project_id, items)
+        status, info = dm.update_case_info(project_id, items)
         resp = {
             "info": info
         }
@@ -146,7 +146,7 @@ def create_project():
 
         project_id = body_json.get('project_id')
 
-        status, reason = ds.create_project({'project_id': project_id})
+        status, reason = dm.create_project({'project_id': project_id})
         resp = {
             "info": reason
         }
@@ -181,7 +181,7 @@ def post_test_results(project_id):
             i['project_id'] = project_id
 
         try:
-            status, info = ds.batch_insert_results(project_id, body_json)
+            status, info = dm.batch_insert_results(project_id, body_json)
             resp = {
                 "info": info
             }
@@ -215,10 +215,10 @@ def diff_test_result(project_id):
         if "testruns" not in params:
             abort(make_response(jsonify(error="testruns must be set"), 400))
         testruns = params['testruns'].split(',')
-        diff = ds.get_diff_from_testrun(project_id, testruns)
+        diff = dm.get_diff_from_testrun(project_id, testruns)
         testrun_summary = []
         for tr_id in testruns:
-            tr_info = ds.get_testrun_list(
+            tr_info = dm.get_testrun_list(
                 project_id, {"testrun_id": tr_id, "id_only": 'false'}
             )
             if len(tr_info) > 0:

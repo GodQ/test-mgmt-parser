@@ -7,39 +7,21 @@ from elasticsearch_dsl import Search
 from elasticsearch_dsl import connections
 
 from config.config import Config
-from test_result.data_store_interface import DataStoreBase, check_project_exist
+from test_result.data_mgmt_interface import check_project_exist
+from test_result.data_store_interface import TestResultDataStoreInterface
+
 
 ES_HOSTS = Config.get_config('es_hosts')
 # Define a default Elasticsearch client
-connections.create_connection(hosts=ES_HOSTS)
+connections.create_connection(hosts=ES_HOSTS, timeout=30)
 
 
-class ElasticSearchOperation:
+class ESTestResultDataStore(TestResultDataStoreInterface):
+    search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
+
     def __init__(self):
         hosts = ES_HOSTS
         self.es = Elasticsearch(hosts=hosts)
-
-    def search(self, **kwargs):
-        return self.es.search(**kwargs)
-
-    def get_indices_stat(self, indices_set, data_type='list'):
-        all_indexes = self.es.cat.indices('*', format='json')
-        res = None
-        if data_type == 'list':
-            res = []
-            for i in all_indexes:
-                if i['index'] in indices_set:
-                    res.append(i)
-            res.sort(key=lambda x: x['index'])
-        elif data_type == 'dict':
-            res = {}
-            for i in all_indexes:
-                if i['index'] in indices_set:
-                    res[i['index']] = i
-        return res
-
-    def index(self, **kwargs):
-        return self.es.index(**kwargs)
 
     def common_search(self, search_obj: Search, **kwargs):
         assert search_obj
@@ -110,163 +92,69 @@ class ElasticSearchOperation:
         ret = self.es.update_by_query(index, body)
         print(ret)
 
+    def search(self, **kwargs):
+        return self.es.search(**kwargs)
 
-class ElasticSearchDataStore(DataStoreBase):
-    es = ElasticSearchOperation()
-    test_result_index = "{}*".format(DataStoreBase.test_result_prefix)
-    projects_index = "projects"
-    search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
+    def get_projects_stat(self, project_ids):
+        assert isinstance(project_ids, list)
+        index_id_set = set(project_ids)
+        all_indexes = self.es.cat.indices('*', format='json')
+        res = {}
+        for i in all_indexes:
+            if i['index'] in index_id_set:
+                t = {
+                    "index": i['index'],
+                    "test_result_count": i['docs.count'],
+                    "store_size": i['store.size'],
+                }
+                res[i['index']] = t
+        return res
 
-    def get_case_bugs_mapping_index(self, index):
-        assert index
-        project = index.replace(self.test_result_prefix, "", 1)
-        mapping_index = project.strip() + "_case_bugs"
-        return mapping_index
-
-    def create_project(self, params):
-        project_id = params.get('project_id')
-        assert project_id
-        exist = check_project_exist(self, project_id)
-        if exist:
-            return 409, f"Project ID '{project_id}' has existed"
-
-        doc = {
-            "project_id": project_id,
-            "created_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time())),
-        }
-        ret = self.es.index(index=self.projects_index, body=doc)
-        result = ret['result']
-        if result == 'created':
-            return 201, 'created'
-        else:
-            return 400, ret
-
-    def get_project_list(self, params=None):
-        if params is None:
-            params = {}
-        limit = params.get("limit", 10000)
-        if not isinstance(limit, int):
-            limit = int(limit)
-        id_only = params.get("id_only", 'false')
-
-        # data = self.es.get_index_list(prefix=DataStoreBase.test_result_prefix)
-        search_obj = Search()
-        try:
-            data = self.es.common_search(
-                search_obj=search_obj,
-                index=self.projects_index,
-                limit=limit
-            )
-            print(data)
-        except elasticsearch.exceptions.NotFoundError as e:
-            data = []
-        index_ids = [i['project_id'] for i in data]
-        if id_only == 'true':
-            return index_ids
-        else:
-            indices_info = self.es.get_indices_stat(indices_set=index_ids, data_type='dict')
-            res = []
-            print(data)
-            for project in data:
-                i = indices_info.get(project['project_id'])
-                p = project
-                if i:
-                    t = {
-                        "test_result_count": i['docs.count'],
-                        "store_size": i['store.size'],
-                    }
-                    p.update(t)
-                else:
-                    t = {
-                        "test_result_count": 0,
-                        "store_size": 0,
-                    }
-                    p.update(t)
-                res.append(p)
-            return res
-
-    def insert_result(self, project_id, r):
-        if "timestamp" not in r:
-            r['@timestamp'] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time()))
-        if "created_time" not in r:
-            r['created_time'] = r['@timestamp']
-        self.es.index(index=project_id, body=r)
-
-    def get_summary(self):
-        data = dict()
-
+    def get_summary_info(self, project_ids):
         query_body = {
             "track_total_hits": True
         }
-        # es_data = self.es.search(index=self.test_result_index, body=query_body)
-        index_ids = self.get_project_list({'id_only': 'true'})
         search_obj = Search.from_dict(query_body)
-        search_obj = search_obj.query("terms", _index=index_ids)
+        search_obj = search_obj.query("terms", _index=project_ids)
         search_obj.aggs.bucket('project_count', 'cardinality', field='_index')
         search_obj.aggs.bucket('testrun_count', 'cardinality', field='testrun_id.keyword')
-        print(search_obj.to_dict())
-        es_data = self.es.common_search(
+        # print(search_obj.to_dict())
+        es_data = self.common_search(
             search_obj=search_obj,
             index="*",
             limit=0,
             raw_result=True
         )
-
-        print(es_data)
-
+        print(es_data.aggregations)
+        data = dict()
         data["total"] = es_data.hits.total.value
-        data['project_count'] = len(index_ids)  # es_data.aggregations.project_count.value
+        data['project_count'] = len(project_ids)  # es_data.aggregations.project_count.value
         data['testrun_count'] = es_data.aggregations.testrun_count.value
 
         return data
 
-    def get_project_settings(self, project_id):
+    def insert_test_result(self, project_id, data):
         assert project_id
-        exist = check_project_exist(self, project_id)
-        if not exist:
-            return 404, f"Project ID '{project_id}' does not exist"
+        assert isinstance(data, dict)
+        data['index'] = project_id
+        return self.es.index(**data)
 
-        def _search_(key):
-            query_body = {
-                "collapse": {"field": f"{key}.keyword"}
-            }
-            search_obj = Search.from_dict(query_body)
-            search_obj = search_obj.source([key]).sort({f"{key}.keyword": {"order": "asc"}})
-            data = self.es.common_search(
-                search_obj=search_obj,
-                index=project_id)
-            print(data)
-            d = list()
-            for t in data:
-                i = t.get(key)
-                if i:
-                    d.append(i)
-            return d
-        envs = _search_('env')
-        suites = _search_('suite_name')
-        res = {
-            'envs': envs,
-            'suites': suites
+    def search_test_result_field(self, project_id, key):
+        query_body = {
+            "collapse": {"field": f"{key}.keyword"}
         }
-        return res
-
-    def get_testrun_list(self, project_id, params=None):
-        assert project_id
-        exist = check_project_exist(self, project_id)
-        if not exist:
-            return 404, f"Project ID '{project_id}' does not exist"
-
-        id_only = params.get("id_only", "true")
-        if "testrun_id" in params and params['testrun_id']:
-            id_only = "false"
-        id_only = id_only.lower()
-        try:
-            if id_only != "true":
-                return self.get_testrun_list_details(project_id, params)
-            else:
-                return self.get_testrun_list_id_only(project_id, params)
-        except elasticsearch.exceptions.NotFoundError as e:
-            return []
+        search_obj = Search.from_dict(query_body)
+        search_obj = search_obj.source([key]).sort({f"{key}.keyword": {"order": "asc"}})
+        data = self.common_search(
+            search_obj=search_obj,
+            index=project_id)
+        print(data)
+        d = list()
+        for t in data:
+            i = t.get(key)
+            if i:
+                d.append(i)
+        return d
 
     def get_testrun_list_id_only(self, project_id, params=None):
         if params is None:
@@ -287,7 +175,7 @@ class ElasticSearchDataStore(DataStoreBase):
         if suite and suite != "all":
             search_obj = search_obj.query("match_phrase", suite_name=suite)
         search_obj = search_obj.source(['testrun_id']).sort({"testrun_id.keyword": {"order": "desc"}})
-        data = self.es.common_search(
+        data = self.common_search(
             search_obj=search_obj,
             index=index,
             limit=limit)
@@ -322,7 +210,7 @@ class ElasticSearchDataStore(DataStoreBase):
             .metric('suite_name', 'terms', field="suite_name.keyword") \
             .metric('env', 'terms', field="env.keyword")
 
-        es_data = self.es.common_search(
+        es_data = self.common_search(
             search_obj=search_obj,
             index=index,
             limit=1,
@@ -354,7 +242,7 @@ class ElasticSearchDataStore(DataStoreBase):
         # data.reverse()
         return data
 
-    def search_results(self, project_id, params=None):
+    def search_test_results(self, project_id, params=None):
         assert project_id
         exist = check_project_exist(self, project_id)
         if not exist:
@@ -435,7 +323,7 @@ class ElasticSearchDataStore(DataStoreBase):
             {"case_id.keyword": {"order": "asc"}}
         )
         search_obj = search_obj.source(search_source)
-        data, page_info = self.es.common_search(
+        data, page_info = self.common_search(
             search_obj=search_obj,
             offset=offset,
             index=index,
@@ -443,85 +331,9 @@ class ElasticSearchDataStore(DataStoreBase):
             attach_id=True,
             with_page_info=True
         )
-        if data:
-            case_bugs_mapping = self.get_case_bugs_mapping(index)
-            if case_bugs_mapping:
-                for item in data:
-                    item['project_id'] = item['index']
-                    del item['index']
-                    case_id = item['case_id']
-                    if case_id in case_bugs_mapping:
-                        item['bugs'] = case_bugs_mapping[case_id]
         return data, page_info
 
-    def update_results(self, project_id, items):
-        assert project_id
-        exist = check_project_exist(self, project_id)
-        if not exist:
-            return 404, f"Project ID '{project_id}' does not exist"
-
-        updated = 0
-        assert isinstance(items, list)
-        for i, d in enumerate(items):
-            if d.get('case_id') and d.get('testrun_id'):
-                # update comment in test-results index
-                query = {
-                    'testrun_id': d.get('testrun_id'),
-                    "case_id": d.get('case_id')
-                }
-                update = {}
-                if 'comment' in d:
-                    update['comment'] = d.get('comment')
-                if update:
-                    self.es.update_es_by_query(project_id, query, update)
-
-                # update bugs in case bugs mapping index
-                if 'bugs' in d:
-                    mapping_index = self.get_case_bugs_mapping_index(project_id)
-                    data = {
-                        "case_id": d.get('case_id'),
-                        "bugs": d.get('bugs')
-                    }
-                    ret = self.es.index(index=mapping_index, body=data, id=d.get('case_id'))
-                    print(ret)
-
-                updated += 1
-        return 200, {"updated": updated}
-
-    def get_case_bugs_mapping(self, index):
-        mapping_index = self.get_case_bugs_mapping_index(index)
-        try:
-            search_obj = Search()
-            mapping = self.es.common_search(search_obj=search_obj, index=mapping_index)
-            if not mapping:
-                mapping = {}
-            t = dict()
-            for m in mapping:
-                if 'case_id' in m and 'bugs' in m:
-                    t[m['case_id']] = m['bugs']
-            mapping = t
-        except elasticsearch.exceptions.NotFoundError as e:
-            mapping = {}
-        return mapping
-
-
-DataStore = ElasticSearchDataStore
 
 if __name__ == '__main__':
-    es = ElasticSearchOperation()
+    es = ESTestResultDataStore()
     # print(es.get_index_list())
-
-    ds = ElasticSearchDataStore()
-    # r = ds.create_project({'project_id': 'aaa'})
-    # pprint(r)
-    # indexes = ds.get_project_list()
-    # pprint(indexes)
-    project_settings = ds.get_project_settings("test-result-alp-saas")
-    pprint(project_settings)
-    # pprint(ds.get_testrun_list_id_only())
-    # pprint(ds.get_testrun_list({"id_only": "true"}))
-    # pprint(ds.get_testrun_list({"id_only": "false"}))
-    # pprint(ds.get_case_bugs_mapping(indexes[0]))
-    # pprint(ds.get_summary())
-    # pprint(ds.get_testrun_list_details({"limit":3}))
-    # pprint(ds.search_results({'limit': 2}))

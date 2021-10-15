@@ -1,8 +1,8 @@
-from test_result.es.data_store import ElasticSearchDataStore
+from test_result.es.test_result_data_store import ESTestResultDataStore as ES_TestResultDataStore
 from config.config import Config
 
 data_store_mapping = {
-    'es': ElasticSearchDataStore
+    'es': ES_TestResultDataStore
 }
 
 

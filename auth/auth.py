@@ -1,6 +1,6 @@
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 from flask import g
-from common.user_model import User, BadRequest, DuplicatedUserName, load_user_by_name
+from models.user_model import User, BadRequest, DuplicatedUserName, UserUtils
 from config.config import Config
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 
@@ -37,7 +37,7 @@ def get_user_roles_cb(auth):
 
 def verify_auth_password(user_name, password):
     try:
-        user = load_user_by_name(user_name)
+        user = UserUtils.load_user_by_name(user_name)
         if user.verify_password(password):
             return user
         else:
@@ -55,7 +55,7 @@ def verify_auth_token(token):
     except BadSignature:
         return None  # invalid token
     try:
-        user = load_user_by_name(data['user_name'])
+        user = UserUtils.load_user_by_name(data['user_name'])
         return user
     except Exception as e:
         return None
