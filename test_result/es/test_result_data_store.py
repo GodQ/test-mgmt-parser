@@ -137,7 +137,9 @@ class ESTestResultDataStore(TestResultDataStoreInterface):
         assert project_id
         assert isinstance(data, dict)
         data['index'] = project_id
-        return self.es.index(**data)
+
+        r = self.es.index(index=project_id, body=data)
+        return r
 
     def search_test_result_field(self, project_id, key):
         query_body = {
