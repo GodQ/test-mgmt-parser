@@ -6,10 +6,6 @@ from auth.auth import auth
 from test_result.data_mgmt import DataMgmt
 from . import bp
 
-# from .es.data_store import DataStore
-# from .mock.mock_data_store import DataStore
-# from .sql.sql_data_store import DataStore
-
 dm = DataMgmt()
 
 

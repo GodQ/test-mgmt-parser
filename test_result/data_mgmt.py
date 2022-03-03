@@ -2,7 +2,6 @@ import time
 from pprint import pprint
 
 from test_result.data_mgmt_interface import DataMgmtInterface, check_project_exist
-# from test_result.es.test_result_data_store import TestResultDataStore
 from models.test_mgmt_model import CaseUtils, ProjectUtils
 from test_result.data_store_factory import DataStore
 
