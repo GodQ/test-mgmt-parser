@@ -36,32 +36,62 @@ def get_test_results():
             "case_id": "001",
             "project": "demo1",
             "testrun_id": "2019-11-20 10:27:26",
-            "case_result": "error"
+            "case_result": "error",
+            "suite_name": "sanity",
+            "env": "dev0",
+            "stdout": "a b c d",
+            "traceback": "t1 t2 t3"
         },
         {
             "case_id": "002",
             "project": "demo1",
             "testrun_id": "2019-11-20 10:27:26",
-            "case_result": "success"
+            "case_result": "success",
+            "suite_name": "sanity",
+            "env": "dev0",
+            "stdout": "a b c d",
+            "traceback": "t1 t2 t3"
         },
         {
             "case_id": "003",
             "project": "demo1",
             "testrun_id": "2019-11-20 10:27:26",
-            "case_result": "failure"
+            "case_result": "failure",
+            "suite_name": "sanity",
+            "env": "dev0",
+            "stdout": "a b",
+            "traceback": "t1 t2 t3"
         },
         {
             "case_id": "001",
             "project": "demo1",
             "testrun_id": "2018-11-20 10:27:26",
-            "case_result": "success"
+            "case_result": "success",
+            "suite_name": "sanity",
+            "env": "dev1",
+            "stdout": "a b c",
+            "traceback": "t1 t2 t3"
         },
         {
             "case_id": "002",
             "project": "demo1",
             "testrun_id": "2018-11-20 10:27:26",
-            "case_result": "success"
+            "case_result": "success",
+            "suite_name": "sanity",
+            "env": "dev1",
+            "stdout": "d e",
+            "traceback": "t1"
         },
+        {
+            "case_id": "003",
+            "project": "demo1",
+            "testrun_id": "2018-11-20 10:27:26",
+            "case_result": "failure",
+            "suite_name": "sanity",
+            "env": "dev1",
+            "stdout": "f g",
+            "traceback": "t1 t2"
+        }
     ]
     return test_results
 

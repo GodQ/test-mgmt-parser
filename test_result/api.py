@@ -57,10 +57,10 @@ def project_settings(project_id):
 
 @bp.route('/projects/<string:project_id>/test_results', methods=['GET'])
 @auth.login_required
-def get_test_result(project_id):
-    print(request)
-    print(request.args)
-    print(request.data)
+def get_test_results(project_id):
+    # print(request)
+    print('get_test_results', request.args)
+    # print(request.data)
     # print(request.json)
 
     args = request.args
@@ -81,7 +81,7 @@ def get_test_result(project_id):
             }
             return jsonify(resp), 200
         except Exception as e:
-            print("params:", params)
+            # print("params:", params)
             traceback.print_exc()
             resp = {
                 "error": str(e)
@@ -92,9 +92,9 @@ def get_test_result(project_id):
 @bp.route('/projects/<string:project_id>/test_results', methods=['PATCH'])
 @auth.login_required(role=['admin', 'developer'])
 def update_test_result(project_id):
-    print(request)
-    print(request.args)
-    print(request.data)
+    # print(request)
+    # print(request.args)
+    print('update_test_result', request.data)
     # print(request.json)
 
     args = request.args
@@ -122,14 +122,14 @@ def update_test_result(project_id):
 @bp.route('/projects', methods=['POST'])
 @auth.login_required(role=['admin'])
 def create_project():
-    print(request)
-    print(request.args)
-    print(request.data)
+    # print(request)
+    # print(request.args)
+    print('create new project:', request.data)
     # print(request.json)
 
     args = request.args
     body_json = request.json
-    print(request.content_type)
+    # print(request.content_type)
     if request.content_type != 'application/json':
         abort(make_response(jsonify(error="Only json is supported"), 400))
 
@@ -153,14 +153,14 @@ def create_project():
 @bp.route('/projects/<string:project_id>/test_results', methods=['POST'])
 @auth.login_required(role=['admin', 'developer'])
 def post_test_results(project_id):
-    print(request)
-    print(request.args)
-    print(request.data)
+    # print(request)
+    # print(request.args)
+    print('insert test result:', request.data)
     # print(request.json)
 
     args = request.args
     body_json = request.json
-    print(request.content_type)
+    # print(request.content_type)
     if request.content_type != 'application/json':
         abort(make_response(jsonify(error="Only json is supported"), 400))
 
@@ -197,9 +197,9 @@ def diff_test_result(project_id):
     '''
     /api/projects/project_id/test_result_diff?testruns=2020-10-18-07-19-13,2020-10-17-12-27-34,2020-10-13-06-19-28'
     '''
-    print(request)
-    print(request.args)
-    print(request.data)
+    # print(request)
+    print('diff_test_result', request.args)
+    # print(request.data)
     # print(request.json)
 
     args = request.args

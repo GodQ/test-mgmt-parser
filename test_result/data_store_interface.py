@@ -18,7 +18,7 @@ class TestResultDataStoreInterface(metaclass=abc.ABCMeta):
 
     def get_summary_info(self, project_ids):
         '''
-        get summare info for all index
+        get summary info for all projects
         '''
         pass
 

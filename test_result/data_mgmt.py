@@ -17,7 +17,7 @@ class DataMgmt(DataMgmtInterface):
     def create_project(self, params):
         project_id = params.get('project_id')
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if exist:
             return 409, f"Project ID '{project_id}' has existed"
 
@@ -59,7 +59,7 @@ class DataMgmt(DataMgmtInterface):
 
     def get_project_settings(self, project_id):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 
@@ -73,7 +73,7 @@ class DataMgmt(DataMgmtInterface):
 
     def get_testrun_list(self, project_id, params=None):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 
@@ -98,18 +98,19 @@ class DataMgmt(DataMgmtInterface):
 
     def search_results(self, project_id, params=None):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 
         data, page_info = self.test_result_data_store.search_test_results(project_id, params)
         if data:
             cases_info = CaseUtils.list_cases(project_id, data_type='dict')
-            print(cases_info)
+            # print(cases_info)
             if cases_info:
                 for item in data:
-                    item['project_id'] = item['index']
-                    del item['index']
+                    if 'index' in item:
+                        item['project_id'] = item['index']
+                        del item['index']
                     case_id = item['case_id']
                     if case_id in cases_info:
                         item['bugs'] = cases_info[case_id]['bugs']
@@ -118,7 +119,7 @@ class DataMgmt(DataMgmtInterface):
 
     def update_case_info(self, project_id, items):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 

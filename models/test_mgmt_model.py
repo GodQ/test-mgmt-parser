@@ -66,7 +66,7 @@ class CaseUtils:
     def list_cases(project_id, data_type='dict'):
         if project_id:
             cases = Case.query.filter_by(project_id=project_id).all()
-            print('cases:', cases)
+            # print('cases:', cases)
         else:
             cases = Case.query.all()
         if data_type == 'dict':

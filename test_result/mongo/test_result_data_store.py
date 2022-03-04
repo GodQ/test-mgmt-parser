@@ -1,275 +1,201 @@
-import time
+import pymongo
 from pprint import pprint
-
-import elasticsearch
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
-from elasticsearch_dsl import connections
 
 from config.config import Config
 from test_result.data_mgmt_interface import check_project_exist
 from test_result.data_store_interface import TestResultDataStoreInterface
 
+MONGO_URL = Config.get_config('mongo_url')
+MONGO_DB = Config.get_config('mongo_db')
 
-ES_HOSTS = Config.get_config('es_hosts')
+
 # Define a default Elasticsearch client
-connections.create_connection(hosts=ES_HOSTS, timeout=30)
 
 
 class MongoTestResultDataStore(TestResultDataStoreInterface):
     search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
 
     def __init__(self):
-        hosts = ES_HOSTS
-        self.es = Elasticsearch(hosts=hosts)
+        self.mongo_client = pymongo.MongoClient(MONGO_URL)
+        self.db = self.mongo_client[MONGO_DB]
 
-    def common_search(self, search_obj: Search, **kwargs):
-        assert search_obj
-        if kwargs.get('offset'):
-            offset = kwargs.get('offset')
-        else:
-            offset = 0
-        if kwargs.get('limit'):
-            limit = kwargs.get('limit')
-        else:
-            limit = 100
-        search_obj = search_obj[offset: offset + limit]
-        if kwargs.get('index'):
-            index = kwargs.get('index')
-            search_obj = search_obj.index(index)
-
-        if kwargs.get('raw_result') is not None:
-            raw_result = kwargs.get('raw_result')
-        else:
-            raw_result = False
-        if kwargs.get('attach_id'):
-            attach_id = kwargs.get('attach_id')
-        else:
-            attach_id = False
-        if kwargs.get('with_page_info') is not None:
-            with_page_info = kwargs.get('with_page_info')
-        else:
-            with_page_info = False
-
-        print("\nES query:", search_obj.to_dict())
-
-        res = search_obj.execute()
-
-        if raw_result is True:
-            return res
-
-        data = list()
-
-        for hit in res.hits.hits:
-            d = hit['_source'].to_dict()
-            if attach_id:
-                d['index'] = hit['_index']
-                d['doc_id'] = hit['_id']
-            data.append(d)
-        if with_page_info is True:
-            page_info = {
-                "total": res.hits.total.value,
-                "limit": limit,
-                "offset": offset
+    def get_project_stat(self, project_id, params=None):
+        assert isinstance(project_id, str)
+        stats = self.db.command("collstats", project_id)
+        testrun_ids = self.get_testrun_list_id_only(project_id)
+        testrun_count = len(testrun_ids)
+        t = {
+                "index": project_id,
+                "project_id": project_id,
+                "test_result_count": stats['count'],
+                "store_size": stats['storageSize'],
+                "testrun_count": testrun_count
             }
-            return data, page_info
-        else:
-            return data
-
-    def update_es_by_query(self, index, queries, updates):
-        query_must = list()
-        for k, v in queries.items():
-            query_must.append({"match_phrase": {k: v}})
-
-        script_source = list()
-        for k, v in updates.items():
-            script_source.append("ctx._source['{}']='{}'".format(k, v))
-        script_source = ";".join(script_source)
-        body = {
-            "script": {"source": script_source},
-            "query": {"bool": {"must": query_must}}
-        }
-        ret = self.es.update_by_query(index, body)
-        print(ret)
-
-    def search(self, **kwargs):
-        return self.es.search(**kwargs)
+        return t
 
     def get_projects_stat(self, project_ids):
         assert isinstance(project_ids, list)
-        index_id_set = set(project_ids)
-        all_indexes = self.es.cat.indices('*', format='json')
         res = {}
-        for i in all_indexes:
-            if i['index'] in index_id_set:
-                t = {
-                    "index": i['index'],
-                    "test_result_count": i['docs.count'],
-                    "store_size": i['store.size'],
-                }
-                res[i['index']] = t
+        for project_id in project_ids:
+            stat = self.get_project_stat(project_id)
+            res[project_id] = stat
         return res
 
     def get_summary_info(self, project_ids):
-        query_body = {
-            "track_total_hits": True
-        }
-        search_obj = Search.from_dict(query_body)
-        search_obj = search_obj.query("terms", _index=project_ids)
-        search_obj.aggs.bucket('project_count', 'cardinality', field='_index')
-        search_obj.aggs.bucket('testrun_count', 'cardinality', field='testrun_id.keyword')
-        # print(search_obj.to_dict())
-        es_data = self.common_search(
-            search_obj=search_obj,
-            index="*",
-            limit=0,
-            raw_result=True
-        )
-        print(es_data.aggregations)
+        db_stats = self.db.command("dbstats")
+        # print(db_stats)
         data = dict()
-        data["total"] = es_data.hits.total.value
-        data['project_count'] = len(project_ids)  # es_data.aggregations.project_count.value
-        data['testrun_count'] = es_data.aggregations.testrun_count.value
+        data["total"] = db_stats['objects']
+        data['project_count'] = db_stats['collections'] - 1  # base is the default collection
+        data["store_size"] = db_stats['storageSize']
 
+        testrun_count = 0
+        for p in project_ids:
+            testrun_ids = self.get_testrun_list_id_only(p)
+            testrun_count += len(testrun_ids)
+        data['testrun_count'] = testrun_count
+
+        return data
+
+    def get_testrun_list_id_only(self, project_id, params=None):
+        if params is None:
+            params = {}
+        limit = params.get("limit", 1000)
+        if not isinstance(limit, int):
+            limit = int(limit)
+        env = params.get("env", '')
+        suite_name = params.get("suite_name", '') or params.get("suite", '')
+
+        # queries = {}
+        # if env:
+        #     queries['env'] = env
+        # if suite_name:
+        #     queries['suite_name'] = suite_name
+        # testrun_ids = self.db[project_id].distinct(key='testrun_id', filter=queries)
+        pipeline = [
+            {"$project": {'testrun_id': 1}},
+            {'$group': {'_id': "$testrun_id"}},
+            # {'$group': {'_id': "$testrun_id", 'count': {'$sum': 1}}}
+        ]
+        if env:
+            pipeline.insert(0, {'$match': {'env': env}})
+        if suite_name:
+            pipeline.insert(0, {'$match': {'suite_name': suite_name}})
+        testrun_ids_cursor = self.db[project_id].aggregate(pipeline)
+        testrun_ids = [i['_id'] for i in list(testrun_ids_cursor)]
+        return testrun_ids
+
+    def get_testrun_list_details(self, project_id, params=None):
+        if params is None:
+            params = {}
+        limit = params.get("limit", 1000)
+        if not isinstance(limit, int):
+            limit = int(limit)
+        env = params.get("env", '')
+        suite_name = params.get("suite_name", '') or params.get("suite", '')
+        testrun_id = params.get("testrun_id", None)
+
+        queries = {}
+        if env:
+            queries['env'] = env
+        if suite_name:
+            queries['suite_name'] = suite_name
+
+        pipeline = []
+        if env and env != 'all':
+            pipeline.append({'$match': {'env': env}})
+        if suite_name and suite_name != "all":
+            pipeline.append({'$match': {'suite_name': suite_name}})
+        if testrun_id:
+            pipeline.append({'$match': {'testrun_id': testrun_id}})
+
+        # pipeline.append({'$sort': {'testrun_id': -1}})
+        # pipeline.append({'$group': {'_id': "$testrun_id",
+        #                             'case_results': {'$push': '$case_result'},
+        #                             'suite_name': {'$last': '$suite_name'},
+        #                             'env': {'$last': '$env'},
+        #                             }})
+        pipeline.append({
+            '$group': {
+                '_id': {
+                    'testrun_id': "$testrun_id",
+                    'case_result': "$case_result"
+                },
+                'count': {'$sum': 1},
+                'suite_name': {'$last': '$suite_name'},
+                'env': {'$last': '$env'},
+        }})
+
+        testrun_ids_cursor = self.db[project_id].aggregate(pipeline)
+        testruns = {}
+        for i in list(testrun_ids_cursor):
+            testrun_id = i['_id']['testrun_id']
+            case_result = i['_id']['case_result']
+            count = i['count']
+            if testrun_id not in testruns:
+                suite_name = i['suite_name']
+                env = i['env']
+                testruns[testrun_id] = {
+                    'testrun_id': testrun_id,
+                    'suite_name': suite_name,
+                    'env': env,
+                    'case_count': 0
+                }
+            testruns[testrun_id][case_result] = count
+            testruns[testrun_id]['case_count'] += count
+
+        data = list()
+        for testrun in testruns.values():
+            if testrun.get('success') and testrun.get('case_count'):
+                rate = float(testrun.get('success', 0)) / (testrun['case_count'] - testrun.get('skip', 0))
+                testrun['success_rate'] = int(rate * 1000) / 10
+            else:
+                testrun['success_rate'] = 0
+            data.append(testrun)
+        data.sort(key=lambda t: t['testrun_id'])
+        # data.reverse()
         return data
 
     def insert_test_result(self, project_id, data):
         assert project_id
         assert isinstance(data, dict)
-        data['index'] = project_id
+        data['project_id'] = project_id
 
-        r = self.es.index(index=project_id, body=data)
+        r = self.db[project_id].insert_one(document=data)
         return r
 
     def search_test_result_field(self, project_id, key):
-        query_body = {
-            "collapse": {"field": f"{key}.keyword"}
-        }
-        search_obj = Search.from_dict(query_body)
-        search_obj = search_obj.source([key]).sort({f"{key}.keyword": {"order": "asc"}})
-        data = self.common_search(
-            search_obj=search_obj,
-            index=project_id)
-        print(data)
-        d = list()
-        for t in data:
-            i = t.get(key)
-            if i:
-                d.append(i)
-        return d
-
-    def get_testrun_list_id_only(self, project_id, params=None):
-        if params is None:
-            params = {}
-        index = project_id
-        limit = params.get("limit", 1000)
-        if not isinstance(limit, int):
-            limit = int(limit)
-        env = params.get("env", '')
-        suite = params.get("suite", '')
-
-        query_body = {
-            "collapse": {"field": "testrun_id.keyword"}
-        }
-        search_obj = Search.from_dict(query_body)
-        if env and env != "all":
-            search_obj = search_obj.query("match_phrase", env=env)
-        if suite and suite != "all":
-            search_obj = search_obj.query("match_phrase", suite_name=suite)
-        search_obj = search_obj.source(['testrun_id']).sort({"testrun_id.keyword": {"order": "desc"}})
-        data = self.common_search(
-            search_obj=search_obj,
-            index=index,
-            limit=limit)
-        d = list()
-        for t in data:
-            i = t.get('testrun_id')
-            if i:
-                d.append(i)
-        return d
-
-    def get_testrun_list_details(self, project_id, params=None):
-        if params is None:
-            params = {}
-        index = project_id
-        limit = params.get("limit", 10)
-        if not isinstance(limit, int):
-            limit = int(limit)
-        testrun_id = params.get("testrun_id", None)
-        env = params.get("env", '')
-        suite = params.get("suite", '')
-
-        search_obj = Search()
-        if testrun_id:
-            # search_obj = search_obj.filter("term", testrun_id=testrun_id)
-            search_obj = search_obj.query("match_phrase", testrun_id=testrun_id)
-        if env and env != "all":
-            search_obj = search_obj.query("match_phrase", env=env)
-        if suite and suite != "all":
-            search_obj = search_obj.query("match_phrase", suite_name=suite)
-        search_obj.aggs.bucket('testruns', 'terms', field='testrun_id.keyword', size=limit, order={"_term": "desc"}) \
-            .metric('case_results', 'terms', field="case_result.keyword") \
-            .metric('suite_name', 'terms', field="suite_name.keyword") \
-            .metric('env', 'terms', field="env.keyword")
-
-        es_data = self.common_search(
-            search_obj=search_obj,
-            index=index,
-            limit=1,
-            raw_result=True
-        )
-        # pprint(len(es_data.hits.hits))
-        if not es_data:
-            return []
-        data = list()
-        for testrun in es_data.aggregations.testruns.buckets:
-            # print(testrun['env'].buckets)
-            item = dict()
-            item['testrun_id'] = testrun['key']
-            try:
-                item['env'] = testrun['env']['buckets'][0]['key']
-                item['suite_name'] = testrun['suite_name']['buckets'][0]['key']
-            except Exception as e:
-                print(e)
-            item['case_count'] = testrun['doc_count']
-            for status in testrun['case_results']['buckets']:
-                item[status['key']] = status['doc_count']
-            if item.get('success') and item.get('case_count'):
-                rate = float(item.get('success', 0)) / (item['case_count'] - item.get('skip', 0))
-                item['success_rate'] = int(rate * 1000) / 10
-            else:
-                item['success_rate'] = 0
-            data.append(item)
-        # data.sort(key=lambda i: i['testrun_id'])
-        # data.reverse()
-        return data
+        values = self.db[project_id].distinct(key)
+        return values
 
     def search_test_results(self, project_id, params=None):
         assert project_id
-        exist = check_project_exist(self, project_id)
-        if not exist:
-            return 404, f"Project ID '{project_id}' does not exist"
-        index = project_id
-
+        # exist = check_project_exist(project_id)
+        # if not exist:
+        #     return 404, f"Project ID '{project_id}' does not exist"
+        if not params:
+            params = {}
+        with_page_info = params.get("with_page_info", True)
+        if isinstance(with_page_info, str) and with_page_info.lower() == 'false':
+            with_page_info = False
+        else:
+            with_page_info = True
         limit = params.get("limit", 10)
         if not isinstance(limit, int):
             limit = int(limit)
-        if "limit" in params:
-            del params['limit']
         offset = params.get("offset", 0)
         if not isinstance(offset, int):
             offset = int(offset)
-        if "offset" in params:
-            del params['offset']
         details_flag = params.get('details')
         if details_flag is True or isinstance(details_flag, str) and details_flag.lower() == 'true':
-            del params['details']
-            search_source = []
+            search_source = None
         else:
             search_source = self.search_source
 
-        regexp_queries = list()
-        multi_matches = list()
+        queries = {}
+
+        if params.get("testrun_id", None):
+            queries['testrun_id'] = params['testrun_id']
 
         if "keyword" in params:
             keyword = params['keyword']
@@ -285,57 +211,58 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
                     # format field:query_str
                     field = kv[0].strip()
                     value = ".*{}.*".format(kv[1].strip())
-
-                    regexp_queries.append({
-                        field: value
-                    })
+                    queries[field] = {'$regex': value}
                 else:
                     # full search string
-                    multi_matches.append({
-                        "query": key_split.strip(),
-                        "type": "best_fields",
-                        "fields": ["*"],
-                        # "operator": "or"
-                    })
-            if len(regexp_queries) == 0 and len(multi_matches) == 0:
-                multi_matches.append({
-                    "query": keyword.strip(),
-                    "type": "best_fields",
-                    "fields": ["*"],
-                    # "operator": "or"
-                })
-                # print('**************')
+                    queries['$text'] = {"$search": key_split}
+        print('filter:')
+        pprint(queries)
+        sort_config = [
+                    ('testrun_id', pymongo.DESCENDING),
+                    ('case_id', pymongo.ASCENDING)]
+        # search
+        test_results_cursor = self.db[project_id].find(filter=queries, projection=search_source).\
+            sort(sort_config)
+        test_results = list(test_results_cursor.skip(offset).limit(limit))
+        for tr in test_results:
+            tr['_id'] = str(tr['_id'])
 
-        query_must = list()
-        for k, v in params.items():
-            query_must.append({"match_phrase": {k: v}})
-
-        query_body = {"query": {"bool": {"must": query_must}}}
-        if regexp_queries:
-            for regexp_q in regexp_queries:
-                query_body["query"]["bool"]["must"].append({"regexp": regexp_q})
-        if multi_matches:
-            for multi_match in multi_matches:
-                query_body["query"]["bool"]["must"].append({"multi_match": multi_match})
-
-        query_body['track_total_hits'] = True
-        search_obj = Search.from_dict(query_body)
-        search_obj = search_obj.sort(
-            {"testrun_id.keyword": {"order": "desc"}},
-            {"case_id.keyword": {"order": "asc"}}
-        )
-        search_obj = search_obj.source(search_source)
-        data, page_info = self.common_search(
-            search_obj=search_obj,
-            offset=offset,
-            index=index,
-            limit=limit,
-            attach_id=True,
-            with_page_info=True
-        )
-        return data, page_info
+        if with_page_info is True:
+            total_count = test_results_cursor.count(with_limit_and_skip=False)
+            page_info = {
+                "total": total_count,
+                "limit": limit,
+                "offset": offset
+            }
+        else:
+            page_info = None
+        return test_results, page_info
 
 
 if __name__ == '__main__':
-    es = MongoTestResultDataStore()
-    # print(es.get_index_list())
+    mongo = MongoTestResultDataStore()
+    projects = ['test', 'test-1']
+    doc = {
+            "case_id": "new",
+            "project": "demo1",
+            "testrun_id": "2018-11-20 10:27:26",
+            "case_result": "error",
+            "suite_name": "sanity",
+            "env": "dev2"
+        }
+    # print(mongo.get_testrun_list_id_only(projects[0]))
+    # print(mongo.get_testrun_list_details(projects[0]))
+    # mongo.insert_test_result(projects[0], doc)
+    # print(mongo.get_projects_stat(projects))
+    # print(mongo.get_summary_info(projects))
+    # print(mongo.search_test_result_field(projects[0], 'env'))
+    # pprint(mongo.search_test_results(projects[0]))
+    params = {
+        'with_page_info': 'true',
+        # 'keyword': 'case_result:success&env:dev0', # match
+        'keyword': 'b',   # full text search
+        'offset': 0,
+        'limit': 3,
+        'details': True
+    }
+    pprint(mongo.search_test_results(projects[0], params))
