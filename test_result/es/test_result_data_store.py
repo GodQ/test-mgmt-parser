@@ -20,8 +20,13 @@ class ESTestResultDataStore(TestResultDataStoreInterface):
     search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
 
     def __init__(self):
+        super().__init__()
         hosts = ES_HOSTS
         self.es = Elasticsearch(hosts=hosts)
+
+    def create_project(self, project_id, enable_full_text=True):
+        # No action to create project storage, and enable full test search
+        pass
 
     def common_search(self, search_obj: Search, **kwargs):
         assert search_obj

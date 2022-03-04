@@ -19,6 +19,16 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
         self.mongo_client = pymongo.MongoClient(MONGO_URL)
         self.db = self.mongo_client[MONGO_DB]
 
+    def create_project(self, project_id, enable_full_text=True):
+        assert isinstance(project_id, str) and project_id
+        self.db.create_collection(project_id)
+        if enable_full_text is True:
+            self.enable_full_text_search(project_id)
+
+    def enable_full_text_search(self, project_id):
+        assert isinstance(project_id, str) and project_id
+        self.db[project_id].create_index([("$**", pymongo.TEXT)], background=False)
+
     def get_project_stat(self, project_id, params=None):
         assert isinstance(project_id, str)
         stats = self.db.command("collstats", project_id)

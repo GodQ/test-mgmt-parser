@@ -12,7 +12,7 @@ if __name__ == '__main__':
     print(ProjectUtils.create_project(project_id))
     print(ProjectUtils.list_projects())
 
-    case_id = 'case'
+    case_id = '001'
     print(CaseUtils.list_cases())
     print(CaseUtils.list_cases(project_id))
     print(CaseUtils.update_cases(project_id, case_id, [1], 'aaa'))

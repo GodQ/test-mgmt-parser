@@ -23,6 +23,7 @@ class DataMgmt(DataMgmtInterface):
 
         try:
             project = ProjectUtils.create_project(project_id)
+            self.test_result_data_store.create_project(project_id, enable_full_text=True)
             return 201, f'created {project.to_dict()}'
         except Exception as e:
             return 400, str(e)
