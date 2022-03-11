@@ -87,9 +87,9 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
             {'$group': {'_id': "$testrun_id"}},
             # {'$group': {'_id': "$testrun_id", 'count': {'$sum': 1}}}
         ]
-        if env:
+        if env and env != 'all':
             pipeline.insert(0, {'$match': {'env': env}})
-        if suite_name:
+        if suite_name and suite_name != 'all':
             pipeline.insert(0, {'$match': {'suite_name': suite_name}})
         testrun_ids_cursor = self.db[project_id].aggregate(pipeline)
         testrun_ids = [i['_id'] for i in list(testrun_ids_cursor)]
