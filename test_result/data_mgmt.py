@@ -19,14 +19,18 @@ class DataMgmt(DataMgmtInterface):
         assert project_id
         exist = check_project_exist(project_id)
         if exist:
-            return 409, f"Project ID '{project_id}' has existed"
+            resp = {'error': f"Project ID '{project_id}' has existed"}
+            return 409, resp
 
         try:
             project = ProjectUtils.create_project(project_id)
             self.test_result_data_store.create_project(project_id, enable_full_text=True)
-            return 201, f'created {project.to_dict()}'
+            resp = project.to_dict()
+            resp['info'] = 'created'
+            return 201, resp
         except Exception as e:
-            return 400, str(e)
+            resp = {'error': str(e)}
+            return 400, resp
 
     def get_project_list(self, params=None):
         if params is None:

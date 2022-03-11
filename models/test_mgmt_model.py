@@ -63,7 +63,7 @@ class CaseUtils:
         return case.to_dict()
 
     @staticmethod
-    def list_cases(project_id, data_type='dict'):
+    def list_cases(project_id=None, data_type='dict'):
         if project_id:
             cases = Case.query.filter_by(project_id=project_id).all()
             # print('cases:', cases)
