@@ -5,7 +5,7 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
-ExecStart=/bin/sh -c 'source venv/bin/activate && python app.py'
+ExecStart=/bin/bash -c 'source venv/bin/activate && python app.py'
 Restart=always
 WorkingDirectory=/root/test-mgmt/test-mgmt-parser
 
