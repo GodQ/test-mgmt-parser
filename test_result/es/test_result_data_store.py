@@ -28,6 +28,10 @@ class ESTestResultDataStore(TestResultDataStoreInterface):
         # No action to create project storage, and enable full test search
         pass
 
+    def enable_full_text_search(self, project_id):
+        # No action to create project storage, and enable full test search
+        pass
+
     def common_search(self, search_obj: Search, **kwargs):
         assert search_obj
         if kwargs.get('offset'):

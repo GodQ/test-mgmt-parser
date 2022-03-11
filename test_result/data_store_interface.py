@@ -16,6 +16,12 @@ class TestResultDataStoreInterface(metaclass=abc.ABCMeta):
         '''
         pass
 
+    def enable_full_text_search(self, project_id):
+        '''
+        enable_full_text_search for project
+        '''
+        pass
+
     def get_projects_stat(self, project_ids):
         '''
         get project stat list

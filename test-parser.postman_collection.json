@@ -1315,7 +1315,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"project_id\": \"test1\"\n}",
+							"raw": "{\n    \"project_id\": \"{{new_project_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1477,6 +1477,91 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"data\": {\n        \"envs\": [\n            \"dev0\",\n            \"dev1\"\n        ],\n        \"suites\": [\n            \"sanity\"\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "delete project",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/api/projects/{{new_project_id}}",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"projects",
+								"{{new_project_id}}"
+							],
+							"query": [
+								{
+									"key": "id_only",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "delete project",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://{{host}}:{{port}}/api/projects/{{new_project_id}}",
+									"protocol": "http",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"api",
+										"projects",
+										"{{new_project_id}}"
+									],
+									"query": [
+										{
+											"key": "id_only",
+											"value": "true",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"status": "NO CONTENT",
+							"code": 204,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/1.0.1 Python/3.7.4"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 11 Mar 2022 07:31:37 GMT"
+								}
+							],
+							"cookie": [],
+							"body": null
 						}
 					]
 				}

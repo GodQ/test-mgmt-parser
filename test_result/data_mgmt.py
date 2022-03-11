@@ -4,6 +4,7 @@ from pprint import pprint
 from test_result.data_mgmt_interface import DataMgmtInterface, check_project_exist
 from models.test_mgmt_model import CaseUtils, ProjectUtils
 from test_result.data_store_factory import DataStore
+from config.config import Config
 
 
 class DataMgmt(DataMgmtInterface):
@@ -31,6 +32,32 @@ class DataMgmt(DataMgmtInterface):
         except Exception as e:
             resp = {'error': str(e)}
             return 400, resp
+
+    def enable_project_full_text_search(self, project_id):
+        assert project_id
+        exist = check_project_exist(project_id)
+        if not exist:
+            resp = {'error': f"Project ID '{project_id}' does not exist"}
+            return 404, resp
+        try:
+            if Config.get_config('data_store_type') == 'mongo':
+                self.test_result_data_store.enable_full_text_search(project_id)
+            resp = {'info': 'enabled'}
+            return 201, resp
+        except Exception as e:
+            resp = {'error': str(e)}
+            return 400, resp
+
+    def delete_project(self, project_id):
+        assert project_id
+        exist = check_project_exist(project_id)
+        if not exist:
+            resp = {'error': f"Project ID '{project_id}' does not exist"}
+            return 404, resp
+        project = ProjectUtils.delete_project(project_id)
+        resp = project.to_dict()
+        resp['info'] = 'deleted'
+        return 204, resp
 
     def get_project_list(self, params=None):
         if params is None:

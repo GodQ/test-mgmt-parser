@@ -108,7 +108,7 @@ class ProjectUtils:
     def delete_project(project_id):
         project = Project.query.filter_by(project_id=project_id).first()
         if not project:
-            raise NotExistProject(f'Project {project_id} did not exist')
+            raise NotExistProject(f'Project {project_id} does not exist')
         db.session.delete(project)
         db.session.commit()
         return project

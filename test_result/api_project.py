@@ -69,3 +69,18 @@ def create_project():
 
         status, resp = dm.create_project({'project_id': project_id})
         return jsonify(resp), status
+
+
+@bp.route('/projects/<string:project_id>', methods=['DELETE'])
+@auth.login_required
+def delete_project(project_id):
+    status, resp = dm.delete_project(project_id)
+    return jsonify(resp), status
+
+
+@bp.route('/projects/<string:project_id>/full_text_search', methods=['POST'])
+@auth.login_required
+def enable_project_full_text_search(project_id):
+    status, resp = dm.enable_project_full_text_search(project_id)
+    return jsonify(resp), status
+
