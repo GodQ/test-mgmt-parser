@@ -5,6 +5,7 @@ from test_result.data_mgmt_interface import DataMgmtInterface, check_project_exi
 from models.test_mgmt_model import CaseUtils, ProjectUtils
 from test_result.data_store_factory import DataStore
 from config.config import Config
+from utils.cache import Cache
 
 
 class DataMgmt(DataMgmtInterface):
@@ -109,15 +110,22 @@ class DataMgmt(DataMgmtInterface):
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 
+        key = f'{project_id}-{params}'
+        r = Cache.get(key)
+        if r:
+            return r
+
         id_only = params.get("id_only", "true")
         if "testrun_id" in params and params['testrun_id']:
             id_only = "false"
         id_only = id_only.lower()
         try:
             if id_only != "true":
-                return self.test_result_data_store.get_testrun_list_details(project_id, params)
+                resp = self.test_result_data_store.get_testrun_list_details(project_id, params)
             else:
-                return self.test_result_data_store.get_testrun_list_id_only(project_id, params)
+                resp = self.test_result_data_store.get_testrun_list_id_only(project_id, params)
+            Cache.add(key, resp, ttl=120)
+            return resp
         except Exception as e:
             return []
 

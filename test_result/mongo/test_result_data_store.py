@@ -13,7 +13,7 @@ def reformat_params(params: dict):
     if params is None:
         params = {}
 
-    limit = params.get("limit", 10)
+    limit = params.get("limit", None)
     if not limit:
         limit = 10
     if not isinstance(limit, int):
@@ -96,6 +96,8 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
         return data
 
     def get_testrun_list_id_only(self, project_id, params=None):
+        if not params.get('limit'):
+            params['limit'] = 999999
         params = reformat_params(params)
         offset = params.get("offset", 0)
         limit = params.get("limit", 10)
