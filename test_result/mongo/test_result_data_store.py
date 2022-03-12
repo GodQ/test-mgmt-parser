@@ -119,6 +119,7 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
             pipeline.insert(0, {'$match': {'suite_name': suite_name}})
         testrun_ids_cursor = self.db[project_id].aggregate(pipeline)
         testrun_ids = [i['_id'] for i in list(testrun_ids_cursor)]
+        testrun_ids.sort(reverse=True)
         return testrun_ids[offset: offset + limit]
 
     def get_testrun_list_details(self, project_id, params=None):
@@ -186,7 +187,7 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
             else:
                 testrun['success_rate'] = 0
             data.append(testrun)
-        data.sort(key=lambda t: t['testrun_id'])
+        data.sort(key=lambda t: t['testrun_id'], reverse=True)
         # data.reverse()
         return data[offset: offset + limit]
 
