@@ -9,7 +9,35 @@ MONGO_URL = Config.get_config('mongo_url')
 MONGO_DB = Config.get_config('mongo_db')
 
 
-# Define a default Elasticsearch client
+def reformat_params(params: dict):
+    if params is None:
+        params = {}
+
+    limit = params.get("limit", 10)
+    if not limit:
+        limit = 10
+    if not isinstance(limit, int):
+        limit = int(limit)
+    params['limit'] = limit
+
+    offset = params.get("offset", 0)
+    if not offset:
+        offset = 0
+    if not isinstance(offset, int):
+        offset = int(offset)
+    params['offset'] = offset
+
+    with_page_info = params.get("with_page_info", True)
+    if isinstance(with_page_info, str) and with_page_info.lower() == 'false':
+        with_page_info = False
+    else:
+        with_page_info = True
+    params['with_page_info'] = with_page_info
+
+    suite_name = params.get("suite_name", '') or params.get("suite", '')
+    params['suite_name'] = suite_name
+
+    return params
 
 
 class MongoTestResultDataStore(TestResultDataStoreInterface):
@@ -68,13 +96,11 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
         return data
 
     def get_testrun_list_id_only(self, project_id, params=None):
-        if params is None:
-            params = {}
-        limit = params.get("limit", 1000)
-        if not isinstance(limit, int):
-            limit = int(limit)
-        env = params.get("env", '')
-        suite_name = params.get("suite_name", '') or params.get("suite", '')
+        params = reformat_params(params)
+        offset = params.get("offset", 0)
+        limit = params.get("limit", 10)
+        env = params.get("env", 'all')
+        suite_name = params.get("suite_name", 'all')
 
         # queries = {}
         # if env:
@@ -93,16 +119,14 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
             pipeline.insert(0, {'$match': {'suite_name': suite_name}})
         testrun_ids_cursor = self.db[project_id].aggregate(pipeline)
         testrun_ids = [i['_id'] for i in list(testrun_ids_cursor)]
-        return testrun_ids
+        return testrun_ids[offset: offset + limit]
 
     def get_testrun_list_details(self, project_id, params=None):
-        if params is None:
-            params = {}
-        limit = params.get("limit", 1000)
-        if not isinstance(limit, int):
-            limit = int(limit)
-        env = params.get("env", '')
-        suite_name = params.get("suite_name", '') or params.get("suite", '')
+        params = reformat_params(params)
+        offset = params.get("offset", 0)
+        limit = params.get("limit", 10)
+        env = params.get("env", 'all')
+        suite_name = params.get("suite_name", 'all')
         testrun_id = params.get("testrun_id", None)
 
         queries = {}
@@ -164,7 +188,7 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
             data.append(testrun)
         data.sort(key=lambda t: t['testrun_id'])
         # data.reverse()
-        return data
+        return data[offset: offset + limit]
 
     def insert_test_result(self, project_id, data):
         assert project_id
@@ -183,19 +207,12 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
         # exist = check_project_exist(project_id)
         # if not exist:
         #     return 404, f"Project ID '{project_id}' does not exist"
-        if not params:
-            params = {}
-        with_page_info = params.get("with_page_info", True)
-        if isinstance(with_page_info, str) and with_page_info.lower() == 'false':
-            with_page_info = False
-        else:
-            with_page_info = True
-        limit = params.get("limit", 10)
-        if not isinstance(limit, int):
-            limit = int(limit)
+        params = reformat_params(params)
         offset = params.get("offset", 0)
-        if not isinstance(offset, int):
-            offset = int(offset)
+        limit = params.get("limit", 10)
+        env = params.get("env", 'all')
+        suite_name = params.get("suite_name", 'all')
+        with_page_info = params.get("with_page_info", True)
         details_flag = params.get('details')
         if details_flag is True or isinstance(details_flag, str) and details_flag.lower() == 'true':
             search_source = None
