@@ -96,7 +96,9 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
         return data
 
     def get_testrun_list_id_only(self, project_id, params=None):
-        if not params or not params.get('limit'):
+        if not params:
+            params = {}
+        if not params.get('limit'):
             params['limit'] = 999999
         params = reformat_params(params)
         offset = params.get("offset", 0)
