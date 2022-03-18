@@ -1,6 +1,7 @@
 flask
 flask_sqlalchemy
 flask-HTTPAuth
+flask-cors
 #elasticsearch
 #elasticsearch_dsl
 pyyaml
