@@ -29,7 +29,7 @@ def get_test_results(project_id):
     # print(request.json)
 
     args = request.args
-    body_json = request.json
+    # body_json = request.json
 
     if request.method == 'GET':
         params = request.args.to_dict()

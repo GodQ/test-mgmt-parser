@@ -21,7 +21,7 @@ class Migrator:
         self.mongo = self.mongo_client[MONGO_DB]
         self.es = Elasticsearch(hosts=ES_HOSTS)
 
-    def load_from_es(self, index, from_=0, to_=None, interval=2):
+    def load_from_es(self, index, from_=0, to_=None, batch_size=2):
         if not to_:
             to_ = 9999999999999
         query = {'track_total_hits': True}
@@ -29,7 +29,7 @@ class Migrator:
         search_obj = search_obj.index(index)
         start = from_
         while start < to_:
-            end = start + interval
+            end = start + batch_size
             if end > to_:
                 end = to_
             print(f'load docs from es, [{start}, {end-1}]')
@@ -42,7 +42,31 @@ class Migrator:
                 d = hit['_source'].to_dict()
                 ret.append(d)
             yield ret
-            start += interval
+            start += batch_size
+
+    def load_from_es_scroll(self, index, from_=0, to_=None, batch_size=2):
+        from elasticsearch.helpers import scan
+        if not to_:
+            to_ = 9999999999999
+
+        count = 0
+        t = 0
+        query = {'query': {'match_all': {}}}
+        iterator = scan(self.es, index=index, query=query,
+                        scroll="5m", size=batch_size, from_=from_)
+        res = []
+        for doc in iterator:
+            count += 1
+            t += 1
+            print(t, count)
+            res.append(doc['_source'])
+            if count >= to_:
+                yield res
+                break
+            if t >= batch_size:
+                yield res
+                res = []
+                t = 0
 
     def dump_to_mongo(self, collection, data: list):
         r = self.mongo[collection].insert_many(documents=data, ordered=False)
@@ -59,6 +83,9 @@ class Migrator:
 
 
 m = Migrator()
-m.migrate(es_index='alp-saas', mongo_collection='alp-saas', interval=100)
+# m.migrate(es_index='alp-saas', mongo_collection='alp-saas', interval=100)
+# m.migrate(es_index='alp-onprem', mongo_collection='alp-onprem', interval=100)
 
-m.migrate(es_index='alp-onprem', mongo_collection='alp-onprem', interval=100)
+r = m.load_from_es_scroll(index='alp-saas', batch_size=100)
+for docs in r:
+    print(len(docs))

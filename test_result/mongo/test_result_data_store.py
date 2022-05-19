@@ -228,6 +228,8 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
 
         if params.get("testrun_id", None):
             queries['testrun_id'] = params['testrun_id']
+        if params.get("case_id", None):
+            queries['case_id'] = params['case_id']
 
         if "keyword" in params:
             keyword = params['keyword']

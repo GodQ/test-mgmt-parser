@@ -234,7 +234,7 @@
 			"name": "test results",
 			"item": [
 				{
-					"name": "get test_result",
+					"name": "get test_results",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -349,7 +349,7 @@
 					]
 				},
 				{
-					"name": "get test_result_diff",
+					"name": "get test_results with case_id",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -364,7 +364,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_result_diff?testruns=2019-11-20 10:27:26,2018-11-20 10:27:26",
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?testrun_id=2019-11-20 10:27:26&case_id=001",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
@@ -374,29 +374,33 @@
 								"api",
 								"projects",
 								"{{project_id}}",
-								"test_result_diff"
+								"test_results"
 							],
 							"query": [
 								{
-									"key": "testrun2",
-									"value": "2020-10-17-12-27-34",
+									"key": "index",
+									"value": "test-result-app-launchpad",
 									"disabled": true
 								},
 								{
-									"key": "testruns",
-									"value": "2019-11-20 10:27:26,2018-11-20 10:27:26"
+									"key": "testrun_id",
+									"value": "2019-11-20 10:27:26"
+								},
+								{
+									"key": "case_id",
+									"value": "001"
 								}
 							]
 						}
 					},
 					"response": [
 						{
-							"name": "get test_result_diff",
+							"name": "get test_result",
 							"originalRequest": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_result_diff?testruns=2019-11-20 10:27:26,2018-11-20 10:27:26",
+									"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?limit=2&offset=0&details=true",
 									"protocol": "http",
 									"host": [
 										"{{host}}"
@@ -406,17 +410,25 @@
 										"api",
 										"projects",
 										"{{project_id}}",
-										"test_result_diff"
+										"test_results"
 									],
 									"query": [
 										{
-											"key": "testrun2",
-											"value": "2020-10-17-12-27-34",
+											"key": "index",
+											"value": "test-result-app-launchpad",
 											"disabled": true
 										},
 										{
-											"key": "testruns",
-											"value": "2019-11-20 10:27:26,2018-11-20 10:27:26"
+											"key": "limit",
+											"value": "2"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										},
+										{
+											"key": "details",
+											"value": "true"
 										}
 									]
 								}
@@ -431,7 +443,7 @@
 								},
 								{
 									"key": "Content-Length",
-									"value": "1066"
+									"value": "1024"
 								},
 								{
 									"key": "Server",
@@ -439,16 +451,16 @@
 								},
 								{
 									"key": "Date",
-									"value": "Fri, 04 Mar 2022 10:58:02 GMT"
+									"value": "Fri, 04 Mar 2022 10:57:44 GMT"
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"data\": [\n        {\n            \"case_id\": \"001\",\n            \"results\": [\n                {\n                    \"result\": \"error\",\n                    \"testrun_id\": \"2019-11-20 10:27:26\"\n                },\n                {\n                    \"result\": \"success\",\n                    \"testrun_id\": \"2018-11-20 10:27:26\"\n                }\n            ]\n        },\n        {\n            \"case_id\": \"003\",\n            \"results\": [\n                {\n                    \"result\": \"failure\",\n                    \"testrun_id\": \"2019-11-20 10:27:26\"\n                },\n                {\n                    \"result\": \"failure\",\n                    \"testrun_id\": \"2018-11-20 10:27:26\"\n                }\n            ]\n        }\n    ],\n    \"summary\": [\n        {\n            \"case_count\": 3,\n            \"env\": \"dev0\",\n            \"error\": 1,\n            \"failure\": 1,\n            \"success\": 1,\n            \"success_rate\": 33.3,\n            \"suite_name\": \"sanity\",\n            \"testrun_id\": \"2019-11-20 10:27:26\"\n        },\n        {\n            \"case_count\": 3,\n            \"env\": \"dev1\",\n            \"failure\": 1,\n            \"success\": 2,\n            \"success_rate\": 66.6,\n            \"suite_name\": \"sanity\",\n            \"testrun_id\": \"2018-11-20 10:27:26\"\n        }\n    ],\n    \"testruns\": [\n        \"2019-11-20 10:27:26\",\n        \"2018-11-20 10:27:26\"\n    ]\n}"
+							"body": "{\n    \"data\": [\n        {\n            \"@timestamp\": \"2022-03-04T10:53:59Z\",\n            \"_id\": \"6221efc7d53a724e25d16fb7\",\n            \"bugs\": \"1,2,3\",\n            \"case_id\": \"001\",\n            \"case_result\": \"error\",\n            \"comment\": \"111111,222\",\n            \"created_time\": \"2022-03-04T10:53:59Z\",\n            \"env\": \"dev0\",\n            \"project\": \"test\",\n            \"project_id\": \"test\",\n            \"stdout\": \"a b c d\",\n            \"suite_name\": \"sanity\",\n            \"testrun_id\": \"2019-11-20 10:27:26\",\n            \"traceback\": \"t1 t2 t3\"\n        },\n        {\n            \"@timestamp\": \"2022-03-04T10:53:59Z\",\n            \"_id\": \"6221efc7d53a724e25d16fb8\",\n            \"bugs\": \"098\",\n            \"case_id\": \"002\",\n            \"case_result\": \"success\",\n            \"comment\": \"lll\",\n            \"created_time\": \"2022-03-04T10:53:59Z\",\n            \"env\": \"dev0\",\n            \"project\": \"test\",\n            \"project_id\": \"test\",\n            \"stdout\": \"a b c d\",\n            \"suite_name\": \"sanity\",\n            \"testrun_id\": \"2019-11-20 10:27:26\",\n            \"traceback\": \"t1 t2 t3\"\n        }\n    ],\n    \"page_info\": {\n        \"limit\": 2,\n        \"offset\": 0,\n        \"total\": 6\n    }\n}"
 						}
 					]
 				},
 				{
-					"name": "get test_result with filter",
+					"name": "get test_result with keyword",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -463,7 +475,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?testrun_id=2019-11-20 10:27:26&keyword=success",
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?testrun_id=2019-11-20 10:27:26&keyword=case_result: success",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
@@ -482,7 +494,7 @@
 								},
 								{
 									"key": "keyword",
-									"value": "success"
+									"value": "case_result: success"
 								}
 							]
 						}
@@ -638,6 +650,105 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"data\": [\n        {\n            \"_id\": \"6221efc7d53a724e25d16fb8\",\n            \"bugs\": \"098\",\n            \"case_id\": \"002\",\n            \"case_result\": \"success\",\n            \"comment\": \"lll\",\n            \"testrun_id\": \"2019-11-20 10:27:26\"\n        }\n    ],\n    \"page_info\": {\n        \"limit\": 10,\n        \"offset\": 0,\n        \"total\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "get test_result_diff",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_result_diff?testruns=2019-11-20 10:27:26,2018-11-20 10:27:26",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"projects",
+								"{{project_id}}",
+								"test_result_diff"
+							],
+							"query": [
+								{
+									"key": "testrun2",
+									"value": "2020-10-17-12-27-34",
+									"disabled": true
+								},
+								{
+									"key": "testruns",
+									"value": "2019-11-20 10:27:26,2018-11-20 10:27:26"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "get test_result_diff",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_result_diff?testruns=2019-11-20 10:27:26,2018-11-20 10:27:26",
+									"protocol": "http",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"api",
+										"projects",
+										"{{project_id}}",
+										"test_result_diff"
+									],
+									"query": [
+										{
+											"key": "testrun2",
+											"value": "2020-10-17-12-27-34",
+											"disabled": true
+										},
+										{
+											"key": "testruns",
+											"value": "2019-11-20 10:27:26,2018-11-20 10:27:26"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1066"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/1.0.1 Python/3.7.4"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 04 Mar 2022 10:58:02 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": [\n        {\n            \"case_id\": \"001\",\n            \"results\": [\n                {\n                    \"result\": \"error\",\n                    \"testrun_id\": \"2019-11-20 10:27:26\"\n                },\n                {\n                    \"result\": \"success\",\n                    \"testrun_id\": \"2018-11-20 10:27:26\"\n                }\n            ]\n        },\n        {\n            \"case_id\": \"003\",\n            \"results\": [\n                {\n                    \"result\": \"failure\",\n                    \"testrun_id\": \"2019-11-20 10:27:26\"\n                },\n                {\n                    \"result\": \"failure\",\n                    \"testrun_id\": \"2018-11-20 10:27:26\"\n                }\n            ]\n        }\n    ],\n    \"summary\": [\n        {\n            \"case_count\": 3,\n            \"env\": \"dev0\",\n            \"error\": 1,\n            \"failure\": 1,\n            \"success\": 1,\n            \"success_rate\": 33.3,\n            \"suite_name\": \"sanity\",\n            \"testrun_id\": \"2019-11-20 10:27:26\"\n        },\n        {\n            \"case_count\": 3,\n            \"env\": \"dev1\",\n            \"failure\": 1,\n            \"success\": 2,\n            \"success_rate\": 66.6,\n            \"suite_name\": \"sanity\",\n            \"testrun_id\": \"2018-11-20 10:27:26\"\n        }\n    ],\n    \"testruns\": [\n        \"2019-11-20 10:27:26\",\n        \"2018-11-20 10:27:26\"\n    ]\n}"
 						}
 					]
 				},
@@ -911,7 +1022,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/testruns?id_only=true",
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/testruns?id_only=true&limit=2",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
@@ -927,6 +1038,15 @@
 								{
 									"key": "id_only",
 									"value": "true"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "2"
 								}
 							]
 						}
@@ -1000,7 +1120,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/testruns?id_only=false&limit=3&env=dev0&suite=sanity",
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/testruns?id_only=false&limit=3&offset=0",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
@@ -1023,11 +1143,17 @@
 								},
 								{
 									"key": "env",
-									"value": "dev0"
+									"value": "dev0",
+									"disabled": true
 								},
 								{
 									"key": "suite",
-									"value": "sanity"
+									"value": "sanity",
+									"disabled": true
+								},
+								{
+									"key": "offset",
+									"value": "0"
 								}
 							]
 						}
@@ -1113,7 +1239,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/testruns?testrun_id=2018-11-20 10:27:26",
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/testruns?id_only=false&suite=all",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
@@ -1128,8 +1254,7 @@
 							"query": [
 								{
 									"key": "id_only",
-									"value": "false",
-									"disabled": true
+									"value": "false"
 								},
 								{
 									"key": "limit",
@@ -1138,7 +1263,12 @@
 								},
 								{
 									"key": "testrun_id",
-									"value": "2018-11-20 10:27:26"
+									"value": "2018-11-20 10:27:26",
+									"disabled": true
+								},
+								{
+									"key": "suite",
+									"value": "all"
 								}
 							]
 						}
@@ -1479,6 +1609,45 @@
 							"body": "{\n    \"data\": {\n        \"envs\": [\n            \"dev0\",\n            \"dev1\"\n        ],\n        \"suites\": [\n            \"sanity\"\n        ]\n    }\n}"
 						}
 					]
+				},
+				{
+					"name": "enable_project_full_text_search",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/full_text_search",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"projects",
+								"{{project_id}}",
+								"full_text_search"
+							],
+							"query": [
+								{
+									"key": "id_only",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
 				},
 				{
 					"name": "delete project",
