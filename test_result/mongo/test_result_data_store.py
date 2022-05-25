@@ -238,6 +238,15 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
             t = params['case_result'].split(',')
             queries['case_result'] = {'$in': t}
 
+        order_by = None
+        order_sc = None
+        if params.get("asc", None):
+            order_by = params['asc']
+            order_sc = pymongo.ASCENDING
+        elif params.get("desc", None):
+            order_by = params['desc']
+            order_sc = pymongo.DESCENDING
+
         if "keyword" in params:
             keyword = params['keyword']
             # keyword = keyword.replace(" ", "")
@@ -259,8 +268,9 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
         print('filter:')
         pprint(queries)
         sort_config = [
-                    ('testrun_id', pymongo.DESCENDING),
-                    ('case_id', pymongo.ASCENDING)]
+                    # ('testrun_id', pymongo.DESCENDING),
+                    (order_by, order_sc)
+        ]
         # search
         test_results_cursor = self.db[project_id].find(filter=queries, projection=search_source).\
             sort(sort_config)
