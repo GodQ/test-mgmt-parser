@@ -40,7 +40,7 @@ def post_test_result(project_id, auth_token: str, body: dict):
 def get_test_results(project_id):
     test_results = [
         {
-            "case_id": "001",
+            "case_id": "feature1.001",
             "project": project_id,
             "testrun_id": "2019-11-20 10:27:26",
             "case_result": "error",
@@ -51,7 +51,7 @@ def get_test_results(project_id):
             "duration": 1.2
         },
         {
-            "case_id": "002",
+            "case_id": "feature1.002",
             "project": project_id,
             "testrun_id": "2019-11-20 10:27:26",
             "case_result": "success",
@@ -62,7 +62,7 @@ def get_test_results(project_id):
             "duration": 2.7
         },
         {
-            "case_id": "003",
+            "case_id": "feature2.003",
             "project": project_id,
             "testrun_id": "2019-11-20 10:27:26",
             "case_result": "failure",
@@ -73,7 +73,7 @@ def get_test_results(project_id):
             "duration": 3.9
         },
         {
-            "case_id": "001",
+            "case_id": "feature1.001",
             "project": project_id,
             "testrun_id": "2018-11-20 10:27:26",
             "case_result": "success",
@@ -84,7 +84,7 @@ def get_test_results(project_id):
             "duration": 1.3
         },
         {
-            "case_id": "002",
+            "case_id": "feature1.002",
             "project": project_id,
             "testrun_id": "2018-11-20 10:27:26",
             "case_result": "success",
@@ -95,7 +95,7 @@ def get_test_results(project_id):
             "duration": 1.9
         },
         {
-            "case_id": "003",
+            "case_id": "feature2.003",
             "project": project_id,
             "testrun_id": "2018-11-20 10:27:26",
             "case_result": "failure",

@@ -2,7 +2,8 @@
 	"info": {
 		"_postman_id": "0a566879-9a57-492f-aed2-541f1ba83bb5",
 		"name": "test-parser",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "210494"
 	},
 	"item": [
 		{
@@ -249,7 +250,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?limit=2&offset=0&details=true",
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?limit=6&offset=0&details=true",
 							"protocol": "http",
 							"host": [
 								"{{host}}"
@@ -269,7 +270,7 @@
 								},
 								{
 									"key": "limit",
-									"value": "2"
+									"value": "6"
 								},
 								{
 									"key": "offset",
@@ -278,6 +279,121 @@
 								{
 									"key": "details",
 									"value": "true"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "get test_result",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?limit=2&offset=0&details=true",
+									"protocol": "http",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"api",
+										"projects",
+										"{{project_id}}",
+										"test_results"
+									],
+									"query": [
+										{
+											"key": "index",
+											"value": "test-result-app-launchpad",
+											"disabled": true
+										},
+										{
+											"key": "limit",
+											"value": "2"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										},
+										{
+											"key": "details",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1024"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/1.0.1 Python/3.7.4"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 04 Mar 2022 10:57:44 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": [\n        {\n            \"@timestamp\": \"2022-03-04T10:53:59Z\",\n            \"_id\": \"6221efc7d53a724e25d16fb7\",\n            \"bugs\": \"1,2,3\",\n            \"case_id\": \"001\",\n            \"case_result\": \"error\",\n            \"comment\": \"111111,222\",\n            \"created_time\": \"2022-03-04T10:53:59Z\",\n            \"env\": \"dev0\",\n            \"project\": \"test\",\n            \"project_id\": \"test\",\n            \"stdout\": \"a b c d\",\n            \"suite_name\": \"sanity\",\n            \"testrun_id\": \"2019-11-20 10:27:26\",\n            \"traceback\": \"t1 t2 t3\"\n        },\n        {\n            \"@timestamp\": \"2022-03-04T10:53:59Z\",\n            \"_id\": \"6221efc7d53a724e25d16fb8\",\n            \"bugs\": \"098\",\n            \"case_id\": \"002\",\n            \"case_result\": \"success\",\n            \"comment\": \"lll\",\n            \"created_time\": \"2022-03-04T10:53:59Z\",\n            \"env\": \"dev0\",\n            \"project\": \"test\",\n            \"project_id\": \"test\",\n            \"stdout\": \"a b c d\",\n            \"suite_name\": \"sanity\",\n            \"testrun_id\": \"2019-11-20 10:27:26\",\n            \"traceback\": \"t1 t2 t3\"\n        }\n    ],\n    \"page_info\": {\n        \"limit\": 2,\n        \"offset\": 0,\n        \"total\": 6\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "get test_results order by duration",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?limit=6&offset=0&desc=duration",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"projects",
+								"{{project_id}}",
+								"test_results"
+							],
+							"query": [
+								{
+									"key": "index",
+									"value": "test-result-app-launchpad",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "6"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								},
+								{
+									"key": "desc",
+									"value": "duration"
 								}
 							]
 						}
@@ -495,6 +611,103 @@
 								{
 									"key": "keyword",
 									"value": "case_result: success"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "get test_result with filter",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?testrun_id=2019-11-20 10:27:26&keyword=case_result: success",
+									"protocol": "http",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"api",
+										"projects",
+										"{{project_id}}",
+										"test_results"
+									],
+									"query": [
+										{
+											"key": "testrun_id",
+											"value": "2019-11-20 10:27:26"
+										},
+										{
+											"key": "keyword",
+											"value": "case_result: success"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "295"
+								},
+								{
+									"key": "Server",
+									"value": "Werkzeug/1.0.1 Python/3.7.4"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 04 Mar 2022 10:59:10 GMT"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": [\n        {\n            \"_id\": \"6221efc7d53a724e25d16fb8\",\n            \"bugs\": \"098\",\n            \"case_id\": \"002\",\n            \"case_result\": \"success\",\n            \"comment\": \"lll\",\n            \"testrun_id\": \"2019-11-20 10:27:26\"\n        }\n    ],\n    \"page_info\": {\n        \"limit\": 10,\n        \"offset\": 0,\n        \"total\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "get test_result with case result",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/test_results?testrun_id=2019-11-20 10:27:26&case_result=error,failure",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"projects",
+								"{{project_id}}",
+								"test_results"
+							],
+							"query": [
+								{
+									"key": "testrun_id",
+									"value": "2019-11-20 10:27:26"
+								},
+								{
+									"key": "case_result",
+									"value": "error,failure"
 								}
 							]
 						}
