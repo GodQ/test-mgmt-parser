@@ -1824,6 +1824,44 @@
 					]
 				},
 				{
+					"name": "create_index",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://{{host}}:{{port}}/api/projects/{{project_id}}/index?full_text_search=true",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"api",
+								"projects",
+								"{{project_id}}",
+								"index"
+							],
+							"query": [
+								{
+									"key": "full_text_search",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "enable_project_full_text_search",
 					"request": {
 						"auth": {
