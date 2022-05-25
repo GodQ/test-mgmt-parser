@@ -50,7 +50,20 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
     def create_project(self, project_id, enable_full_text=True):
         assert isinstance(project_id, str) and project_id
         self.db.create_collection(project_id)
+        self.create_index(project_id)
         if enable_full_text is True:
+            self.enable_full_text_search(project_id)
+
+    def create_index(self, project_id, full_text_search=False):
+        assert isinstance(project_id, str) and project_id
+        self.db[project_id].create_index(name='list_env', keys="env")
+        self.db[project_id].create_index(name='list_result', keys="case_result")
+        self.db[project_id].create_index(name='list_suite', keys="suite_name")
+        self.db[project_id].create_index(name='list_testrun', keys="testrun_id")
+        self.db[project_id].create_index(name='search_results', keys=[
+            ("testrun_id", pymongo.ASCENDING), ("case_id", pymongo.ASCENDING)])
+
+        if full_text_search is True:
             self.enable_full_text_search(project_id)
 
     def enable_full_text_search(self, project_id):

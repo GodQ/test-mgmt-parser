@@ -41,8 +41,31 @@ class DataMgmt(DataMgmtInterface):
             resp = {'error': f"Project ID '{project_id}' does not exist"}
             return 404, resp
         try:
-            if Config.get_config('data_store_type') == 'mongo':
+            data_store_type = Config.get_config('data_store_type')
+            if data_store_type == 'mongo':
                 self.test_result_data_store.enable_full_text_search(project_id)
+            else:
+                resp = {'error': f"There is no need for {data_store_type}"}
+                return 400, resp
+            resp = {'info': 'enabled'}
+            return 201, resp
+        except Exception as e:
+            resp = {'error': str(e)}
+            return 400, resp
+
+    def create_index(self, project_id, full_text_search=False):
+        assert project_id
+        exist = check_project_exist(project_id)
+        if not exist:
+            resp = {'error': f"Project ID '{project_id}' does not exist"}
+            return 404, resp
+        try:
+            data_store_type = Config.get_config('data_store_type')
+            if data_store_type == 'mongo':
+                self.test_result_data_store.create_index(project_id, full_text_search)
+            else:
+                resp = {'error': f"There is no need for {data_store_type}"}
+                return 400, resp
             resp = {'info': 'enabled'}
             return 201, resp
         except Exception as e:

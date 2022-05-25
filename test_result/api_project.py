@@ -84,3 +84,14 @@ def enable_project_full_text_search(project_id):
     status, resp = dm.enable_project_full_text_search(project_id)
     return jsonify(resp), status
 
+
+@bp.route('/projects/<string:project_id>/index', methods=['POST'])
+@auth.login_required
+def create_project_index(project_id):
+    args = request.args
+    if str(args.get('full_text_search')).lower() == 'true':
+        full_text_search = True
+    else:
+        full_text_search = False
+    status, resp = dm.create_index(project_id, full_text_search)
+    return jsonify(resp), status

@@ -16,6 +16,12 @@ class TestResultDataStoreInterface(metaclass=abc.ABCMeta):
         '''
         pass
 
+    def create_index(self, project_id, full_text_search=False):
+        '''
+        create index for project
+        '''
+        pass
+
     def enable_full_text_search(self, project_id):
         '''
         enable_full_text_search for project
