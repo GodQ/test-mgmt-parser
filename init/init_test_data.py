@@ -1,18 +1,20 @@
 import http.client
 import json
+from config.config import Config
 
 test_project_id = 'test'
+port = Config.get_config('port')
 
 
 def get_token():
-    conn = http.client.HTTPConnection("localhost", 5000)
+    conn = http.client.HTTPConnection("localhost", port)
     payload = ''
     headers = {
       'Authorization': 'Basic YWRtaW46cGFzc3dvcmQ='
     }
     conn.request("POST", "/api/access_token", payload, headers)
     res = conn.getresponse()
-    assert res.status == 201
+    assert res.status == 201, res.status
     data = res.read()
     access_token = json.loads(data.decode("utf-8")).get('access_token', None)
     assert access_token
@@ -21,7 +23,7 @@ def get_token():
 
 
 def post_test_result(project_id, auth_token: str, body: dict):
-    conn = http.client.HTTPConnection("localhost", 5000)
+    conn = http.client.HTTPConnection("localhost", port)
     payload = json.dumps(body)
     headers = {
         'Authorization': f'Bearer {auth_token}',
@@ -45,7 +47,8 @@ def get_test_results(project_id):
             "suite_name": "sanity",
             "env": "dev0",
             "stdout": "a b c d",
-            "traceback": "t1 t2 t3"
+            "traceback": "t1 t2 t3",
+            "duration": 1.2
         },
         {
             "case_id": "002",
@@ -55,7 +58,8 @@ def get_test_results(project_id):
             "suite_name": "sanity",
             "env": "dev0",
             "stdout": "a b c d",
-            "traceback": "t1 t2 t3"
+            "traceback": "t1 t2 t3",
+            "duration": 2.7
         },
         {
             "case_id": "003",
@@ -65,7 +69,8 @@ def get_test_results(project_id):
             "suite_name": "sanity",
             "env": "dev0",
             "stdout": "a b",
-            "traceback": "t1 t2 t3"
+            "traceback": "t1 t2 t3",
+            "duration": 3.9
         },
         {
             "case_id": "001",
@@ -75,7 +80,8 @@ def get_test_results(project_id):
             "suite_name": "sanity",
             "env": "dev1",
             "stdout": "a b c",
-            "traceback": "t1 t2 t3"
+            "traceback": "t1 t2 t3",
+            "duration": 1.3
         },
         {
             "case_id": "002",
@@ -85,7 +91,8 @@ def get_test_results(project_id):
             "suite_name": "sanity",
             "env": "dev1",
             "stdout": "d e",
-            "traceback": "t1"
+            "traceback": "t1",
+            "duration": 1.9
         },
         {
             "case_id": "003",
@@ -95,7 +102,8 @@ def get_test_results(project_id):
             "suite_name": "sanity",
             "env": "dev1",
             "stdout": "f g",
-            "traceback": "t1 t2"
+            "traceback": "t1 t2",
+            "duration": 2.1
         }
     ]
     return test_results

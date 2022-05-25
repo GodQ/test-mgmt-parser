@@ -41,7 +41,7 @@ def reformat_params(params: dict):
 
 
 class MongoTestResultDataStore(TestResultDataStoreInterface):
-    search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
+    search_source = ['case_id', 'case_result', 'testrun_id', 'comment', 'duration', 'env']
 
     def __init__(self):
         self.mongo_client = pymongo.MongoClient(MONGO_URL)
