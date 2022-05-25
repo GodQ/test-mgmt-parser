@@ -74,7 +74,11 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
     def get_projects_stat(self, project_ids):
         assert isinstance(project_ids, list)
         res = {}
+        collection_names = self.db.list_collection_names()
+        print('collection_names:', collection_names)
         for project_id in project_ids:
+            if project_id not in collection_names:
+                continue
             stat = self.get_project_stat(project_id)
             res[project_id] = stat
         return res
