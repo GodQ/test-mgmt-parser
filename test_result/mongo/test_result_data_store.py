@@ -267,13 +267,15 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
                     queries['$text'] = {"$search": key_split}
         print('filter:')
         pprint(queries)
-        sort_config = [
-                    # ('testrun_id', pymongo.DESCENDING),
-                    (order_by, order_sc)
-        ]
+
         # search
-        test_results_cursor = self.db[project_id].find(filter=queries, projection=search_source).\
-            sort(sort_config)
+        test_results_cursor = self.db[project_id].find(filter=queries, projection=search_source)
+        if order_by:
+            sort_config = [
+                        # ('testrun_id', pymongo.DESCENDING),
+                        (order_by, order_sc)
+            ]
+            test_results_cursor = test_results_cursor.sort(sort_config)
         test_results = list(test_results_cursor.skip(offset).limit(limit))
         for tr in test_results:
             tr['_id'] = str(tr['_id'])
