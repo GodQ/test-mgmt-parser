@@ -3,9 +3,9 @@ data_store_type: 'mongo'
 
 port: 5000
 
-es_hosts: ["10.110.124.130:9200"]
+es_hosts: ["10.139.113.78:9200"]
 #es_hosts: ["127.0.0.1:9200"]
-mongo_url: 'mongodb://10.110.124.130:27017'
+mongo_url: 'mongodb://10.139.113.78:27017'
 mongo_db: 'test-mgmt'
 
 users:

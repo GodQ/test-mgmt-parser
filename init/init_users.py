@@ -1,6 +1,7 @@
 
-from models.user_model import UserUtils, DuplicatedUserName
-from app_init import db
+# from models.user_model import UserUtils, DuplicatedUserName
+from models.user_model import *
+from app_init import db, app
 from config.config import Config
 
 
@@ -17,5 +18,6 @@ def init_users():
 
 
 if __name__ == '__main__':
-    db.create_all()
-    init_users()
+    with app.app_context():
+        db.create_all()
+        init_users()
