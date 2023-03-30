@@ -1,10 +1,11 @@
 flask
 flask_sqlalchemy
 flask-HTTPAuth
-elasticsearch
-elasticsearch_dsl
+flask-cors
+#elasticsearch
+#elasticsearch_dsl
 pyyaml
 passlib
-itsdangerous
-# pymongo
-# mongoengine
+itsdangerous==2.0.1
+pymongo==3.11.2
+#mongoengine

@@ -63,10 +63,10 @@ class CaseUtils:
         return case.to_dict()
 
     @staticmethod
-    def list_cases(project_id, data_type='dict'):
+    def list_cases(project_id=None, data_type='dict'):
         if project_id:
             cases = Case.query.filter_by(project_id=project_id).all()
-            print('cases:', cases)
+            # print('cases:', cases)
         else:
             cases = Case.query.all()
         if data_type == 'dict':
@@ -108,7 +108,7 @@ class ProjectUtils:
     def delete_project(project_id):
         project = Project.query.filter_by(project_id=project_id).first()
         if not project:
-            raise NotExistProject(f'Project {project_id} did not exist')
+            raise NotExistProject(f'Project {project_id} does not exist')
         db.session.delete(project)
         db.session.commit()
         return project

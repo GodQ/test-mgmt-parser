@@ -1,5 +1,5 @@
 
-from models.user_model import *
+from models.user_model import UserUtils, DuplicatedUserName
 from app_init import db
 from config.config import Config
 
@@ -11,7 +11,7 @@ def init_users():
         user_password = user.get('password', 'password')
         user_role = user.get('role', 'developer')
         try:
-            add_user(user_name, user_password, user_role)
+            UserUtils.add_user(user_name, user_password, user_role)
         except DuplicatedUserName as e:
             print(f"User name {user_name} has existed")
 

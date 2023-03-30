@@ -3,9 +3,7 @@ import json
 from config.config import Config
 from app_init import db
 
-from elasticsearch_dsl import Document, Keyword, Text
 from passlib.apps import custom_app_context as pwd_context
-import config.es_connection
 
 default_role = 'developer'
 role_set = ['admin', 'developer', 'viewer']

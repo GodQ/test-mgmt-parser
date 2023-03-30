@@ -1,5 +1,6 @@
 from app_init import app
 from blueprints import register_blueprints
+from config.config import Config
 
 register_blueprints(app)
 
@@ -8,4 +9,5 @@ print(app.url_map)
 print()
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = Config.get_config('port')
+    app.run(host="0.0.0.0", port=port, debug=False)

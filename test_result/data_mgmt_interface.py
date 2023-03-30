@@ -1,5 +1,6 @@
 import abc
 import time
+from models.test_mgmt_model import CaseUtils, ProjectUtils
 
 
 def check_post_result_fields(func):
@@ -60,11 +61,12 @@ class ProjectsCache:
             cls.projects_cache[p] = expire_time
 
 
-def check_project_exist(data_store, project_id):
+def check_project_exist(project_id):
     ret = ProjectsCache.hit(project_id)
     if ret:
         return True
-    projects = data_store.get_project_list({"id_only": 'true'})
+    data = ProjectUtils.list_projects()
+    projects = [i['project_id'] for i in data]
     ProjectsCache.refresh(projects)
     return ProjectsCache.hit(project_id)
 
@@ -213,7 +215,7 @@ class DataMgmtInterface(metaclass=abc.ABCMeta):
     # @check_post_result_fields
     def batch_insert_results(self, project_id, results):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 

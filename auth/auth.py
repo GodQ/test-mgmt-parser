@@ -68,7 +68,7 @@ def verify_password_cb(user_name, password):
         user = verify_auth_password(user_name, password)
         if not user:
             return False
-        print(user)
+        # print(user)
         g.user = user
         return True
     except Exception as e:
@@ -82,7 +82,7 @@ def verify_token_cb(token):
         user = verify_auth_token(token)
         if not user:
             return False
-        print(user)
+        # print(user)
         g.user = user
         return True
     except Exception as e:

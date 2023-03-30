@@ -6,35 +6,7 @@ from auth.auth import auth
 from test_result.data_mgmt import DataMgmt
 from . import bp
 
-# from .es.data_store import DataStore
-# from .mock.mock_data_store import DataStore
-# from .sql.sql_data_store import DataStore
-
 dm = DataMgmt()
-
-
-@bp.route('/')
-def index():
-    return 'Hello!'
-
-
-@bp.route('/summary', methods=['GET'])
-@auth.login_required
-def summary():
-    summary = dm.get_summary()
-    print(summary)
-    return jsonify(summary), 200
-
-
-@bp.route('/projects', methods=['GET'])
-@auth.login_required
-def test_project_list():
-    args = request.args
-    testruns = dm.get_project_list(args)
-    resp = {
-        "data": testruns
-    }
-    return jsonify(resp), 200
 
 
 @bp.route('/projects/<string:project_id>/testruns', methods=['GET'])
@@ -48,27 +20,16 @@ def testrun_list(project_id):
     return jsonify(resp), 200
 
 
-@bp.route('/projects/<string:project_id>/settings', methods=['GET'])
-@auth.login_required
-def project_settings(project_id):
-    args = request.args.to_dict()
-    settings = dm.get_project_settings(project_id)
-    resp = {
-        "data": settings
-    }
-    return jsonify(resp), 200
-
-
 @bp.route('/projects/<string:project_id>/test_results', methods=['GET'])
 @auth.login_required
-def get_test_result(project_id):
-    print(request)
-    print(request.args)
-    print(request.data)
+def get_test_results(project_id):
+    # print(request)
+    print('get_test_results', request.args)
+    # print(request.data)
     # print(request.json)
 
     args = request.args
-    body_json = request.json
+    # body_json = request.json
 
     if request.method == 'GET':
         params = request.args.to_dict()
@@ -85,7 +46,7 @@ def get_test_result(project_id):
             }
             return jsonify(resp), 200
         except Exception as e:
-            print("params:", params)
+            # print("params:", params)
             traceback.print_exc()
             resp = {
                 "error": str(e)
@@ -96,9 +57,9 @@ def get_test_result(project_id):
 @bp.route('/projects/<string:project_id>/test_results', methods=['PATCH'])
 @auth.login_required(role=['admin', 'developer'])
 def update_test_result(project_id):
-    print(request)
-    print(request.args)
-    print(request.data)
+    # print(request)
+    # print(request.args)
+    print('update_test_result', request.data)
     # print(request.json)
 
     args = request.args
@@ -123,48 +84,17 @@ def update_test_result(project_id):
         return jsonify(resp), status
 
 
-@bp.route('/projects', methods=['POST'])
-@auth.login_required(role=['admin'])
-def create_project():
-    print(request)
-    print(request.args)
-    print(request.data)
-    # print(request.json)
-
-    args = request.args
-    body_json = request.json
-    print(request.content_type)
-    if request.content_type != 'application/json':
-        abort(make_response(jsonify(error="Only json is supported"), 400))
-
-    if request.method == 'POST':
-        if not body_json:
-            resp = {
-                "error": "no json body or header"
-            }
-            return jsonify(resp), 400
-
-        project_id = body_json.get('project_id')
-
-        status, reason = dm.create_project({'project_id': project_id})
-        resp = {
-            "info": reason
-        }
-
-        return jsonify(resp), status
-
-
 @bp.route('/projects/<string:project_id>/test_results', methods=['POST'])
 @auth.login_required(role=['admin', 'developer'])
 def post_test_results(project_id):
-    print(request)
-    print(request.args)
-    print(request.data)
+    # print(request)
+    # print(request.args)
+    print('insert test result:', request.data)
     # print(request.json)
 
     args = request.args
     body_json = request.json
-    print(request.content_type)
+    # print(request.content_type)
     if request.content_type != 'application/json':
         abort(make_response(jsonify(error="Only json is supported"), 400))
 
@@ -201,9 +131,9 @@ def diff_test_result(project_id):
     '''
     /api/projects/project_id/test_result_diff?testruns=2020-10-18-07-19-13,2020-10-17-12-27-34,2020-10-13-06-19-28'
     '''
-    print(request)
-    print(request.args)
-    print(request.data)
+    # print(request)
+    print('diff_test_result', request.args)
+    # print(request.data)
     # print(request.json)
 
     args = request.args

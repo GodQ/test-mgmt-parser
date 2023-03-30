@@ -10,6 +10,24 @@ class TestResultDataStoreInterface(metaclass=abc.ABCMeta):
     # def search(self, **kwargs):
     #     return self.es.search(**kwargs)
 
+    def create_project(self, project_id, enable_full_text=True):
+        '''
+        create project storage, and enable full test search
+        '''
+        pass
+
+    def create_index(self, project_id, full_text_search=False):
+        '''
+        create index for project
+        '''
+        pass
+
+    def enable_full_text_search(self, project_id):
+        '''
+        enable_full_text_search for project
+        '''
+        pass
+
     def get_projects_stat(self, project_ids):
         '''
         get project stat list
@@ -18,7 +36,7 @@ class TestResultDataStoreInterface(metaclass=abc.ABCMeta):
 
     def get_summary_info(self, project_ids):
         '''
-        get summare info for all index
+        get summary info for all projects
         '''
         pass
 

@@ -2,9 +2,10 @@ import time
 from pprint import pprint
 
 from test_result.data_mgmt_interface import DataMgmtInterface, check_project_exist
-# from test_result.es.test_result_data_store import TestResultDataStore
 from models.test_mgmt_model import CaseUtils, ProjectUtils
 from test_result.data_store_factory import DataStore
+from config.config import Config
+from utils.cache import Cache
 
 
 class DataMgmt(DataMgmtInterface):
@@ -18,15 +19,69 @@ class DataMgmt(DataMgmtInterface):
     def create_project(self, params):
         project_id = params.get('project_id')
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if exist:
-            return 409, f"Project ID '{project_id}' has existed"
+            resp = {'error': f"Project ID '{project_id}' has existed"}
+            return 409, resp
 
         try:
             project = ProjectUtils.create_project(project_id)
-            return 201, f'created {project.to_dict()}'
+            self.test_result_data_store.create_project(project_id, enable_full_text=True)
+            resp = project.to_dict()
+            resp['info'] = 'created'
+            return 201, resp
         except Exception as e:
-            return 400, str(e)
+            resp = {'error': str(e)}
+            return 400, resp
+
+    def enable_project_full_text_search(self, project_id):
+        assert project_id
+        exist = check_project_exist(project_id)
+        if not exist:
+            resp = {'error': f"Project ID '{project_id}' does not exist"}
+            return 404, resp
+        try:
+            data_store_type = Config.get_config('data_store_type')
+            if data_store_type == 'mongo':
+                self.test_result_data_store.enable_full_text_search(project_id)
+            else:
+                resp = {'error': f"There is no need for {data_store_type}"}
+                return 400, resp
+            resp = {'info': 'enabled'}
+            return 201, resp
+        except Exception as e:
+            resp = {'error': str(e)}
+            return 400, resp
+
+    def create_index(self, project_id, full_text_search=False):
+        assert project_id
+        exist = check_project_exist(project_id)
+        if not exist:
+            resp = {'error': f"Project ID '{project_id}' does not exist"}
+            return 404, resp
+        try:
+            data_store_type = Config.get_config('data_store_type')
+            if data_store_type == 'mongo':
+                self.test_result_data_store.create_index(project_id, full_text_search)
+            else:
+                resp = {'error': f"There is no need for {data_store_type}"}
+                return 400, resp
+            resp = {'info': 'enabled'}
+            return 201, resp
+        except Exception as e:
+            resp = {'error': str(e)}
+            return 400, resp
+
+    def delete_project(self, project_id):
+        assert project_id
+        exist = check_project_exist(project_id)
+        if not exist:
+            resp = {'error': f"Project ID '{project_id}' does not exist"}
+            return 404, resp
+        project = ProjectUtils.delete_project(project_id)
+        resp = project.to_dict()
+        resp['info'] = 'deleted'
+        return 204, resp
 
     def get_project_list(self, params=None):
         if params is None:
@@ -60,7 +115,7 @@ class DataMgmt(DataMgmtInterface):
 
     def get_project_settings(self, project_id):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 
@@ -74,9 +129,14 @@ class DataMgmt(DataMgmtInterface):
 
     def get_testrun_list(self, project_id, params=None):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
+
+        key = f'{project_id}-{params}'
+        r = Cache.get(key)
+        if r:
+            return r
 
         id_only = params.get("id_only", "true")
         if "testrun_id" in params and params['testrun_id']:
@@ -84,9 +144,11 @@ class DataMgmt(DataMgmtInterface):
         id_only = id_only.lower()
         try:
             if id_only != "true":
-                return self.test_result_data_store.get_testrun_list_details(project_id, params)
+                resp = self.test_result_data_store.get_testrun_list_details(project_id, params)
             else:
-                return self.test_result_data_store.get_testrun_list_id_only(project_id, params)
+                resp = self.test_result_data_store.get_testrun_list_id_only(project_id, params)
+            Cache.add(key, resp, ttl=120)
+            return resp
         except Exception as e:
             return []
 
@@ -99,18 +161,19 @@ class DataMgmt(DataMgmtInterface):
 
     def search_results(self, project_id, params=None):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 
         data, page_info = self.test_result_data_store.search_test_results(project_id, params)
         if data:
             cases_info = CaseUtils.list_cases(project_id, data_type='dict')
-            print(cases_info)
+            # print(cases_info)
             if cases_info:
                 for item in data:
-                    item['project_id'] = item['index']
-                    del item['index']
+                    if 'index' in item:
+                        item['project_id'] = item['index']
+                        del item['index']
                     case_id = item['case_id']
                     if case_id in cases_info:
                         item['bugs'] = cases_info[case_id]['bugs']
@@ -119,7 +182,7 @@ class DataMgmt(DataMgmtInterface):
 
     def update_case_info(self, project_id, items):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
 

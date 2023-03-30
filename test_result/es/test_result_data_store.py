@@ -20,8 +20,17 @@ class ESTestResultDataStore(TestResultDataStoreInterface):
     search_source = ['case_id', 'case_result', 'testrun_id', 'comment']
 
     def __init__(self):
+        super().__init__()
         hosts = ES_HOSTS
         self.es = Elasticsearch(hosts=hosts)
+
+    def create_project(self, project_id, enable_full_text=True):
+        # No action to create project storage, and enable full test search
+        pass
+
+    def enable_full_text_search(self, project_id):
+        # No action to create project storage, and enable full test search
+        pass
 
     def common_search(self, search_obj: Search, **kwargs):
         assert search_obj
@@ -246,7 +255,7 @@ class ESTestResultDataStore(TestResultDataStoreInterface):
 
     def search_test_results(self, project_id, params=None):
         assert project_id
-        exist = check_project_exist(self, project_id)
+        exist = check_project_exist(project_id)
         if not exist:
             return 404, f"Project ID '{project_id}' does not exist"
         index = project_id
