@@ -139,7 +139,7 @@ class MongoTestResultDataStore(TestResultDataStoreInterface):
         if suite_name and suite_name != 'all':
             pipeline.insert(0, {'$match': {'suite_name': suite_name}})
         testrun_ids_cursor = self.db[project_id].aggregate(pipeline)
-        testrun_ids = [i['_id'] for i in list(testrun_ids_cursor)]
+        testrun_ids = [str(i['_id']) for i in list(testrun_ids_cursor)]
         testrun_ids.sort(reverse=True)
         return testrun_ids[offset: offset + limit]
 
